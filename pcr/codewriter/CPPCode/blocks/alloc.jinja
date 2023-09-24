@@ -1,0 +1,5 @@
+{% if link.implant_type == "dropper" %}
+    {% include "blocks/alloc_%s.jinja" % link.alloc.method.value %}
+{% elif link.implant_type == "injector" %}
+    {% include "blocks/alloc_%s_remote.jinja" % link.alloc.method.value %}
+{% endif %}

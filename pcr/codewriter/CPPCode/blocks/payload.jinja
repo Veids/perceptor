@@ -1,0 +1,6 @@
+{% if section == "globals" and link.payload_placement.value == "data" %}
+  __attribute__((__section__(".data")))
+  unsigned char raw[] = {{ shellcode | safe }};
+{% elif section == "text" and link.payload_placement == "text" %}
+    unsigned char raw[] = {{ shellcode | safe }};
+{% endif %}

@@ -1,0 +1,5 @@
+{% if link.implant_type == "dropper" %}
+    {% include "blocks/starter_dropper.jinja" %}
+{% else %}
+    {% include "blocks/starter_injector_%s.jinja" % link.starter_type.value %}
+{% endif %}

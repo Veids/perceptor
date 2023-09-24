@@ -1,0 +1,3 @@
+{% for decoder in decoders %}
+  {% include "decoders/%s.jinja" % decoder["name"] %}
+{% endfor %}

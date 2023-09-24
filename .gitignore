@@ -1,0 +1,4 @@
+config.yaml
+tmp/*
+dist
+__pycache__

