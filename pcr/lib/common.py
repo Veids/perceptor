@@ -1,5 +1,6 @@
 import logging
-from pydantic import BaseModel, DirectoryPath
+from pathlib import Path
+from pydantic import BaseModel
 from typing import ClassVar
 
 from rich.console import Console
@@ -24,4 +25,4 @@ class YamlFuck:
 
 class MainConfig(BaseModel, YamlFuck):
     yaml_tag: ClassVar[str] = u"!MainConfig"
-    tmp: DirectoryPath
+    tmp: Path

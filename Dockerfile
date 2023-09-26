@@ -69,6 +69,7 @@ RUN ln -s /usr/bin/python3 /usr/local/bin/python
 RUN apt-get update && apt-get install -y \
   git \
   mingw-w64 \
+  osslsigncode \
   && rm -rf /var/lib/apt/lists/*
 
 RUN git clone https://github.com/tpoechtrager/wclang && \

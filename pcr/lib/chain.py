@@ -34,6 +34,9 @@ class Chain(BaseModel, YamlFuck):
         console.print(table)
 
     def initialize(self, input: Artifact, config):
+        # Esnure temprory directory exists
+        config["main"].tmp.mkdir(exist_ok=True)
+
         # Set id
         for i, x in enumerate(self.links):
             x.id = i
