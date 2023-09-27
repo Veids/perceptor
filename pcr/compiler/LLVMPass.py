@@ -5,7 +5,7 @@ from pydantic import InstanceOf, FilePath, BaseModel
 from typing import ClassVar, List, Optional
 from rich import print as rprint
 
-from pcr.lib.link import Link
+from pcr.lib.link import Link, Obj
 from pcr.lib.common import YamlFuck
 from pcr.lib.artifact import Artifact, ArtifactType
 
@@ -19,8 +19,8 @@ class LLVMPassConfig(BaseModel, YamlFuck):
 
 class LLVMPass(Link):
     yaml_tag: ClassVar[str] = u"!compiler.LLVMPass"
-    icon: Optional[FilePath | InstanceOf[Link]] = None
-    manifest: Optional[FilePath | InstanceOf[Link]] = None
+    icon: Optional[FilePath | InstanceOf[Link] | Obj] = None
+    manifest: Optional[FilePath | InstanceOf[Link] | Obj] = None
     linker_args: Optional[List[str]] = []
     resources: Optional[List[str]] = []
     version_info: Optional[FilePath] = None
@@ -108,6 +108,9 @@ class LLVMPass(Link):
         if self.icon is not None:
             if isinstance(self.icon, str):
                 icon_path = self.icon
+            if isinstance(self.icon, Obj):
+                icon_path = self.config["main"].tmp / f"stage.{self.id}.icon.ico"
+                icon_path.write_bytes(bytes(self.icon))
             else:
                 icon_path = self.icon.output.path
 

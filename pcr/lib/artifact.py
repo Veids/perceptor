@@ -29,12 +29,11 @@ class Artifact(BaseModel):
     type: ArtifactType
     os: ArtifactOS
     arch: ArtifactArch
-    path: Path
+    path: Optional[Path] = None
     obj: Optional[Any] = None
 
     def read(self):
-        with open(self.path, "rb") as f:
-            return f.read()
+        return self.path.read_bytes()
 
     def write(self, data):
         with open(self.path, "wb") as f:

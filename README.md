@@ -100,6 +100,15 @@ Steal manifest and version_info
     - manifest
 ```
 
+### ResourceCarver
+
+```yaml
+- !modifier.ResourceCarver
+  name: Embed version_info into a binary
+  version: !obj [*metadata, "version"]
+  version_directory_config: !obj [*metadata, "version_directory_config"]
+```
+
 ### Manifestor
 
 ```yaml
@@ -203,6 +212,34 @@ Outputs several obj fields:
 }
 ```
 
+#### Version
+
+```yaml
+- !extractor.PExtractor
+  &manifest
+  name: Extract version from PE
+  entity: version
+  target: *target
+```
+
+Outputs several obj fields:
+
+```json
+{
+  "directory_config": {
+    "code_page": int,
+    "version_node": {
+        "major_version": int,
+        "minor_version": int
+    },
+    "id_node": {
+        "major_version": int,
+        "minor_version": int
+    }
+  }
+}
+```
+
 ## Converter
 
 ### Donut
@@ -274,7 +311,47 @@ Using an icon from the named link (e.g. PExtractor)
 ```yaml
 - !signer.SigThief
   name: SigThief
+  action: store|write
   target: file.exe
+```
+
+## Hiver
+
+### MetadataDB
+
+#### Store
+
+```yaml
+- !hiver.MetadataDB
+  name: Store exe metadata to the db
+  db: MetadataDB.db
+  action: store
+  icon: *icon
+  version: *version
+  manifest: *manifest
+```
+
+#### Get
+
+```yaml
+- !hiver.MetadataDB
+  &metadata
+  db: MetadataDB.db
+  action: get
+```
+
+Exports obj:
+
+```json
+{
+	"hash": str,
+	"icon": bytes,
+	"version": bytes,
+    "version_directory_config": dict,
+	"manifest": bytes,
+    "manifest_directory_config": dict,
+	"signature": bytes
+}
 ```
 
 # Constructors (yaml tags)

@@ -1,0 +1,40 @@
+vars:
+  target: &target !args "--steal"
+chain: !Chain
+  links:
+    - !stdin
+      &stdin
+      name: Stdin
+
+    - !extractor.PExtractor
+      &icon
+      name: Extract icons from PE
+      entity: icon
+      target: *target
+
+    - !extractor.PExtractor
+      &manifest
+      name: Extract manifest from PE
+      entity: manifest
+      target: *target
+
+    - !extractor.PExtractor
+      &version
+      name: Extract version from PE
+      entity: version
+      target: *target
+
+    - !signer.SigThief
+      &signature
+      name: Extract signature from PE
+      action: store
+      target: *target
+
+    - !hiver.MetadataDB
+      name: Populate metadata db
+      action: store
+      db: "MetadataDB.db"
+      icon: *icon
+      version: *version
+      manifest: *manifest
+      signature: *signature

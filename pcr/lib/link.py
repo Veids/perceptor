@@ -54,6 +54,12 @@ class Obj(BaseModel):
     def __str__(self):
         return self.instance.output.obj[self.prop]
 
+    def __bytes__(self):
+        return self.instance.output.obj[self.prop]
+
+    def get(self):
+        return self.instance.output.obj[self.prop]
+
 
 def args_constructor(args):
     def wrapper(loader, node):

@@ -1,4 +1,4 @@
-from xml.dom.minidom import parse
+from xml.dom.minidom import parse, parseString
 from typing import ClassVar, Optional, List
 from typing_extensions import TypedDict, NotRequired
 
@@ -18,6 +18,7 @@ class Manifestor(Link):
     keep: Optional[List[str]] = None
     assemblyIdentity: Optional[AssemblyIdentityDict] = None
     description: Optional[str] = None
+    manifest: Optional[Obj] = None
 
     def deduce_artifact(self) -> Artifact:
         return Artifact(
@@ -44,7 +45,10 @@ class Manifestor(Link):
 
     def process(self):
         self.output = self.deduce_artifact()
-        document = parse(str(self.input.output.path))
+        if not self.manifest:
+            document = parse(str(self.input.output.path))
+        else:
+            document = parseString(bytes(self.manifest).decode().removeprefix("\\xef\\xbb\\xbf"))
         document = document.childNodes[0]
 
         if self.keep is not None:

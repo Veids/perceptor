@@ -13,7 +13,7 @@ from pcr.lib.link import Stdin, Obj, args_constructor, env_constructor
 from pcr.converter.Donut import Donut, DonutConfig
 from pcr.modifier.XOREncode import XOREncode
 from pcr.modifier.RNDOpcodes import RNDOpcodes
-from pcr.modifier.ResourceStealer import ResourceStealer
+from pcr.modifier.ResourceCarver import ResourceCarver
 from pcr.modifier.StringReplace import StringReplace
 from pcr.modifier.Manifestor import Manifestor
 from pcr.modifier.CreateThreadStub import CreateThreadStub
@@ -23,13 +23,14 @@ from pcr.codewriter.cpp_injector import cpp_injector
 from pcr.compiler.LLVMPass import LLVMPass, LLVMPassConfig
 from pcr.signer.CarbonCopy import CarbonCopy
 from pcr.signer.SigThief import SigThief
+from pcr.hiver.MetadataDB import MetadataDB
 
 
 def parse_args():
     parser = argparse.ArgumentParser(add_help=True, description="perceptor: A python script to automatically apply several transforms to source artifact")
     parser.add_argument("-c", '--chain', required=True, action='store', help="Chain to use in stages (yaml)")
-    parser.add_argument("-i", '--input', required=True, action='store', help="Input file")
-    parser.add_argument("-o", '--output', required=True, action='store', help="Output file")
+    parser.add_argument("-i", '--input', required=False, default=None, action='store', help="Input file")
+    parser.add_argument("-o", '--output', required=False, default=None, action='store', help="Output file")
     parser.add_argument("-d", '--debug', required=False, default=False, action='store_true', help="Output file")
     parser.add_argument("-bt", '--binary-os', required=False, choices=["windows", "linux"], action='store', help="Binary type (raw)")
     parser.add_argument("-ba", '--binary-arch', required=False, choices=["x86", "amd64", "x86+amd64"], action='store', help="Binary arch (raw)")
@@ -49,7 +50,7 @@ YAML_CHAIN = [
     # Modifiers
     XOREncode,
     RNDOpcodes,
-    ResourceStealer,
+    ResourceCarver,
     StringReplace,
     Manifestor,
     CreateThreadStub,
@@ -67,6 +68,9 @@ YAML_CHAIN = [
     # Signers
     CarbonCopy,
     SigThief,
+
+    # Hiver
+    MetadataDB,
 ]
 
 YAML_CONFIG = [
@@ -104,6 +108,9 @@ def load_chain(args, unknown):
 
 
 def load_input(args):
+    if not args.input:
+        return None
+
     lb = None
     with open(args.input, "rb") as f:
         lb = lief.parse(f.read())
@@ -156,7 +163,8 @@ def main():
     chain.print_stages()
     chain.process()
 
-    shutil.copyfile(chain.links[-1].output.path, args.output)
+    if args.output:
+        shutil.copyfile(chain.links[-1].output.path, args.output)
 
     if not args.keep_temp:
         for x in config["main"].tmp.glob("*"):
