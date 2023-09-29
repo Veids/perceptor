@@ -143,6 +143,40 @@ Outputs several obj fields:
   where: start|end
 ```
 
+### StudioRandomizer
+
+```yaml
+- !modifier.StudioRandomizer
+  input: *stdin
+  name: Randomize guids in studio files
+  target_project: MyProject
+  entities:
+    - guid
+    - assemblyInfo
+```
+
+Or get assemblyInfo from DB
+
+```yaml
+- !modifier.StudioRandomizer
+  input: *stdin
+  name: Randomize guids in studio files
+  target_project: MyProject
+  entities:
+    - guid
+    - assemblyInfo
+  assemblyInfo: !obj [*metadata, "assemblyInfo"]
+```
+
+### MvidInjector
+
+```yaml
+- !modifier.MvidInjector
+  input: *stdin
+  name: Inject Mvid into binary
+  mvid: !obj [*metadata, "mvid"]
+```
+
 ## CodeWriter
 
 ### Dropper
@@ -329,6 +363,7 @@ Using an icon from the named link (e.g. PExtractor)
   icon: *icon
   version: *version
   manifest: *manifest
+  signature: *signature
 ```
 
 #### Get
@@ -338,20 +373,28 @@ Using an icon from the named link (e.g. PExtractor)
   &metadata
   db: MetadataDB.db
   action: get
+  pe_type: net|etc
 ```
 
 Exports obj:
 
 ```json
 {
-	"hash": str,
-	"icon": bytes,
-	"version": bytes,
-    "version_directory_config": dict,
-	"manifest": bytes,
-    "manifest_directory_config": dict,
-	"signature": bytes
+  "hash": str,
+  "icon": bytes,
+  "version": bytes,
+  "version_directory_config": dict,
+  "manifest": bytes,
+  "manifest_directory_config": dict,
+  "signature": bytes,
+  "assemblyInfo": dict,
+  "mvid": str
 }
 ```
 
 # Constructors (yaml tags)
+
+# Credits
+
+* [https://github.com/Aetsu/OffensivePipeline](OffensivePipeline)
+* [https://github.com/klezVirus/inceptor](inceptor)

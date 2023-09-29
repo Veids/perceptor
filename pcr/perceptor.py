@@ -3,6 +3,7 @@ import shutil
 import argparse
 
 from ruamel.yaml import YAML
+from pathlib import Path
 
 from pcr.lib.common import MainConfig
 from pcr.lib.artifact import Artifact, ArtifactType, ArtifactOS, ArtifactArch
@@ -17,6 +18,8 @@ from pcr.modifier.ResourceCarver import ResourceCarver
 from pcr.modifier.StringReplace import StringReplace
 from pcr.modifier.Manifestor import Manifestor
 from pcr.modifier.CreateThreadStub import CreateThreadStub
+from pcr.modifier.StudioRandomizer import StudioRandomizer
+from pcr.modifier.MvidInjector import MvidInjector
 from pcr.extractor.PExtractor import PExtractor
 from pcr.codewriter.cpp_dropper import cpp_dropper
 from pcr.codewriter.cpp_injector import cpp_injector
@@ -29,8 +32,8 @@ from pcr.hiver.MetadataDB import MetadataDB
 def parse_args():
     parser = argparse.ArgumentParser(add_help=True, description="perceptor: A python script to automatically apply several transforms to source artifact")
     parser.add_argument("-c", '--chain', required=True, action='store', help="Chain to use in stages (yaml)")
-    parser.add_argument("-i", '--input', required=False, default=None, action='store', help="Input file")
-    parser.add_argument("-o", '--output', required=False, default=None, action='store', help="Output file")
+    parser.add_argument("-i", '--input', required=False, type=Path, default=None, action='store', help="Input file")
+    parser.add_argument("-o", '--output', required=False, type=Path, default=None, action='store', help="Output file")
     parser.add_argument("-d", '--debug', required=False, default=False, action='store_true', help="Output file")
     parser.add_argument("-bt", '--binary-os', required=False, choices=["windows", "linux"], action='store', help="Binary type (raw)")
     parser.add_argument("-ba", '--binary-arch', required=False, choices=["x86", "amd64", "x86+amd64"], action='store', help="Binary arch (raw)")
@@ -54,6 +57,8 @@ YAML_CHAIN = [
     StringReplace,
     Manifestor,
     CreateThreadStub,
+    StudioRandomizer,
+    MvidInjector,
 
     # Extractors
     PExtractor,
@@ -111,6 +116,12 @@ def load_input(args):
     if not args.input:
         return None
 
+    if args.input.is_dir():
+        return Artifact(
+            type = ArtifactType.DIRECTORY,
+            path = args.input
+        )
+
     lb = None
     with open(args.input, "rb") as f:
         lb = lief.parse(f.read())
@@ -164,11 +175,17 @@ def main():
     chain.process()
 
     if args.output:
-        shutil.copyfile(chain.links[-1].output.path, args.output)
+        if chain.links[-1].output.type == ArtifactType.DIRECTORY:
+            shutil.copytree(chain.links[-1].output.path, args.output)
+        else:
+            shutil.copyfile(chain.links[-1].output.path, args.output)
 
     if not args.keep_temp:
         for x in config["main"].tmp.glob("*"):
-            x.unlink()
+            if x.is_dir():
+                shutil.rmtree(x)
+            else:
+                x.unlink()
 
 
 if __name__ == "__main__":

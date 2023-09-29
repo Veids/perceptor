@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
-from pydantic import BaseModel
-from typing import ClassVar
+from pydantic import BaseModel, FilePath
+from typing import ClassVar, Optional
 
 from rich.console import Console
 from rich.logging import RichHandler
@@ -26,3 +26,4 @@ class YamlFuck:
 class MainConfig(BaseModel, YamlFuck):
     yaml_tag: ClassVar[str] = u"!MainConfig"
     tmp: Path
+    cecil: Optional[FilePath]

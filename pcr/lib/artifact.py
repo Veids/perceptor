@@ -9,6 +9,7 @@ class ArtifactType(str, Enum):
     CPP = "cpp"
     PE = "pe"
     LIBRARY = "library"
+    DIRECTORY = "directory"
     UNKNOWN = "unknown"
 
 
@@ -27,8 +28,8 @@ class ArtifactArch(str, Enum):
 
 class Artifact(BaseModel):
     type: ArtifactType
-    os: ArtifactOS
-    arch: ArtifactArch
+    os: Optional[ArtifactOS] = ArtifactOS.UNKNOWN
+    arch: Optional[ArtifactArch] = ArtifactOS.UNKNOWN
     path: Optional[Path] = None
     obj: Optional[Any] = None
 

@@ -51,14 +51,23 @@ class Obj(BaseModel):
             prop = prop,
         )
 
+    def keys(self):
+        return self.instance.output.obj[self.prop].keys()
+
+    def get(self, *args):
+        return self.instance.output.obj[self.prop].get(*args)
+
+    def items(self):
+        return self.instance.output.obj[self.prop].items()
+
     def __str__(self):
         return self.instance.output.obj[self.prop]
 
     def __bytes__(self):
         return self.instance.output.obj[self.prop]
 
-    def get(self):
-        return self.instance.output.obj[self.prop]
+    def __getitem__(self, key):
+        return self.instance.output.obj[self.prop][key]
 
 
 def args_constructor(args):

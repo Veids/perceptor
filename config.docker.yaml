@@ -1,5 +1,6 @@
 main: !MainConfig
   tmp: "./tmp"
+  cecil: "/usr/lib/mono-cecil/Mono.Cecil.dll"
 converter:
   Donut: !converter.DonutConfig
     path: "/opt/donut"

@@ -28,11 +28,19 @@ class Metadata(BaseModel):
     manifest = BlobField(null=True)
     manifest_directory_config = TextField(null=True)
     signature = BlobField(null=True)
+    pe_type = CharField()
+    assemblyInfo = TextField()
+    mvid = CharField(null=True)
 
 
 class ActionEnum(str, Enum):
     get = "get"
     store = "store"
+
+
+class PeTypeEnum(str, Enum):
+    etc = "etc"
+    net = "net"
 
 
 class MetadataDB(Link):
@@ -46,6 +54,7 @@ class MetadataDB(Link):
     signature: Optional[FilePath | InstanceOf[Link]] = None
 
     name: Optional[str] = None
+    pe_type: Optional[PeTypeEnum] = PeTypeEnum.etc
 
     def store(self):
         if isinstance(self.icon, Link):
@@ -57,6 +66,10 @@ class MetadataDB(Link):
             version_blob = self.version.output.path.read_bytes()
             version_directory_config = self.version.output.obj["directory_config"]
             version_directory_config = json.dumps(version_directory_config)
+            pe_type = self.version.output.obj["pe_type"]
+            assemblyInfo = self.version.output.obj["assemblyInfo"]
+            assemblyInfo = json.dumps(assemblyInfo)
+            mvid = self.version.output.obj["mvid"]
         else:
             version_blob = self.version.read_bytes()
 
@@ -91,10 +104,13 @@ signature length: {len(signature_blob)}""")
             manifest = manifest_blob,
             manifest_directory_config = manifest_directory_config,
             signature = signature_blob,
+            pe_type = pe_type,
+            assemblyInfo = assemblyInfo,
+            mvid = mvid
         )
 
-    def get(self):
-        metadata = Metadata.select().order_by(fn.Random()).get()
+    def get(self, pe_type = "etc"):
+        metadata = Metadata.select().where(Metadata.pe_type == pe_type).order_by(fn.Random()).get()
 
         icon_blob = zlib.decompress(metadata.icon)
         signature_blob = zlib.decompress(metadata.signature)
@@ -117,7 +133,9 @@ signature length: {len(signature_blob)}""")
                 "version_directory_config": json.loads(metadata.version_directory_config),
                 "manifest": metadata.manifest,
                 "manifest_directory_config": json.loads(metadata.manifest_directory_config),
-                "signature": signature_blob
+                "signature": signature_blob,
+                "assemblyInfo": json.loads(metadata.assemblyInfo),
+                "mvid": metadata.mvid
             }
         )
 
@@ -129,7 +147,7 @@ signature length: {len(signature_blob)}""")
         if self.action == ActionEnum.store:
             self.store()
         else:
-            self.get()
+            self.get(self.pe_type.value)
 
     def info(self) -> str:
         return "Operate on the ManifestDB"

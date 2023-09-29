@@ -70,6 +70,7 @@ RUN apt-get update && apt-get install -y \
   git \
   mingw-w64 \
   osslsigncode \
+  libmono-cecil-cil \
   && rm -rf /var/lib/apt/lists/*
 
 RUN git clone https://github.com/tpoechtrager/wclang && \
