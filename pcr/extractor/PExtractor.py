@@ -52,14 +52,12 @@ class PExtractor(Link):
         assemblyInfo = {
             "Title": ai.get("ProductName", b"").decode(),
             "Description": ai.get("Comments", b"").decode(),
-            "Configuration": "",
             "Company": ai.get("CompanyName", b"").decode(),
             "Product": ai.get("ProductName", b"").decode(),
             "Copyright": ai.get("LegalCopyright", b"").decode(),
-            "Trademark": "",
-            "Culture": "",
             "Version": ai.get("ProductVersion", b"").decode(),
-            "FileVersion": ai.get("FileVersion", b"").decode()
+            "FileVersion": ai.get("FileVersion", b"").decode(),
+            "OriginalFilename": ai["OriginalFilename"].decode()
         }
         return assemblyInfo
 
@@ -71,16 +69,16 @@ class PExtractor(Link):
         clr.AddReference(str(self.config["main"].cecil))
         import Mono.Cecil
 
-        target = Mono.Cecil.ModuleDefinition.ReadModule(str(self.target))
-        if not target.Assembly.HasCustomAttributes:
+        target = Mono.Cecil.AssemblyDefinition.ReadAssembly(str(self.target))
+        if not target.HasCustomAttributes:
             return None
 
         attrs = {}
-        for attr in target.Assembly.CustomAttributes:
+        for attr in target.CustomAttributes:
             if attr.HasConstructorArguments:
                 attrs[attr.AttributeType.Name] = attr.ConstructorArguments[0].Value
 
-        assemblyInfo = {
+        assemblyAttributes = {
             "Title": attrs.get("AssemblyTitleAttribute", ""),
             "Description": attrs.get("AssemblyDescriptionAttribute", ""),
             "Configuration": attrs.get("AssemblyConfigurationAttribute", ""),
@@ -91,12 +89,11 @@ class PExtractor(Link):
             "Culture": attrs.get("AssemblyCultureAttribute", ""),
             "Version": attrs.get("AssemblyFileVersionAttribute", ""),
             "FileVersion": attrs.get("AssemblyFileVersionAttribute", ""),
-            "Guid": attrs["GuidAttribute"]
+            "Guid": attrs["GuidAttribute"],
+            "Mvid": target.MainModule.Mvid.ToString()
         }
 
-        mvid = target.Mvid.ToString()
-
-        return assemblyInfo, mvid
+        return assemblyAttributes
 
     def process(self):
         self.output = self.deduce_artifact()
@@ -164,14 +161,13 @@ class PExtractor(Link):
 
             pe_type = "net" if self.is_dotnet(target) else "etc"
 
-            mvid = None
+            assemblyAttributes = None
             if pe_type == "net":
-                print("    [bold blue]>[/bold blue] Trying cecil for assemblyInfo/Mvid retrival...")
-                assemblyInfo, mvid = self.get_assembly_info_cecil()
+                print("    [bold blue]>[/bold blue] Trying cecil for assemblyAttributes/Mvid retrival...")
+                assemblyAttributes = self.get_assembly_info_cecil()
 
-            if pe_type == "etc" or not assemblyInfo:
-                print("    [bold blue]>[/bold blue] Using lief to get assemblyInfo")
-                assemblyInfo = self.get_assembly_info_lief(target)
+            print("    [bold blue]>[/bold blue] Using lief to get assemblyInfo")
+            assemblyInfo = self.get_assembly_info_lief(target)
 
             self.output.obj = {
                 "directory_config": {
@@ -187,7 +183,7 @@ class PExtractor(Link):
                 },
                 "pe_type": pe_type,
                 "assemblyInfo": assemblyInfo,
-                "mvid": mvid
+                "assemblyAttributes": assemblyAttributes,
             }
 
             self.output.write(lang_node.content.tobytes())

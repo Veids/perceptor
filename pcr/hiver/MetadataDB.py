@@ -30,7 +30,8 @@ class Metadata(BaseModel):
     signature = BlobField(null=True)
     pe_type = CharField()
     assemblyInfo = TextField()
-    mvid = CharField(null=True)
+    assemblyAttributes = TextField(null=True)
+    originalFilename = CharField()
 
 
 class ActionEnum(str, Enum):
@@ -68,8 +69,10 @@ class MetadataDB(Link):
             version_directory_config = json.dumps(version_directory_config)
             pe_type = self.version.output.obj["pe_type"]
             assemblyInfo = self.version.output.obj["assemblyInfo"]
+            originalFilename = assemblyInfo["OriginalFilename"]
             assemblyInfo = json.dumps(assemblyInfo)
-            mvid = self.version.output.obj["mvid"]
+            if assemblyAttributes := self.version.output.obj["assemblyAttributes"]:
+                assemblyAttributes = json.dumps(assemblyAttributes)
         else:
             version_blob = self.version.read_bytes()
 
@@ -106,7 +109,8 @@ signature length: {len(signature_blob)}""")
             signature = signature_blob,
             pe_type = pe_type,
             assemblyInfo = assemblyInfo,
-            mvid = mvid
+            assemblyAttributes = assemblyAttributes,
+            originalFilename = originalFilename
         )
 
     def get(self, pe_type = "etc"):
@@ -135,7 +139,8 @@ signature length: {len(signature_blob)}""")
                 "manifest_directory_config": json.loads(metadata.manifest_directory_config),
                 "signature": signature_blob,
                 "assemblyInfo": json.loads(metadata.assemblyInfo),
-                "mvid": metadata.mvid
+                "assemblyAttributes": json.loads(metadata.assemblyAttributes),
+                "originalFilename": metadata.originalFilename
             }
         )
 

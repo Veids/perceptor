@@ -176,7 +176,7 @@ def main():
 
     if args.output:
         if chain.links[-1].output.type == ArtifactType.DIRECTORY:
-            shutil.copytree(chain.links[-1].output.path, args.output)
+            shutil.copytree(chain.links[-1].output.path, args.output, dirs_exist_ok=True)
         else:
             shutil.copyfile(chain.links[-1].output.path, args.output)
 
