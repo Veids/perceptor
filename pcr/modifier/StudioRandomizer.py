@@ -162,8 +162,9 @@ class StudioRandomizer(Link):
 
         projects = {}
         for file in files:
+            projects[file] = {}
             for project, path, _ in re.findall(project_regex, file.read_text()):
-                projects[project] = path
+                projects[file][project] = path
 
         return projects
 
@@ -192,14 +193,12 @@ class StudioRandomizer(Link):
                 text = re.sub(original, replacement, text, flags=re.I)
             file.write_text(text)
 
-    def randomize_file_name(self, main_project_path, name):
+    def randomize_file_name(self, csproj, name):
         if self.assemblyInfo:
             name = self.assemblyInfo["OriginalFilename"].replace('.exe', '')
 
-        csproj = self.output.path / main_project_path
-
         text = csproj.read_text()
-        pattern = '(<AssemblyName>.*</AssemblyName)'
+        pattern = '(<AssemblyName>.*</AssemblyName>)'
 
         replacement = f"<AssemblyName>{name}</AssemblyName>"
         for match in re.findall(pattern, text):
@@ -211,6 +210,22 @@ class StudioRandomizer(Link):
     def randomize_assembly_info(self):
         files = list(self.output.path.rglob("AssemblyInfo.cs"))
         projects_path = self.get_projects_path()
+
+        if self.target_project:
+            for sln, projects in projects_path.items():
+                if main_project_path := projects.get(self.target_project):
+                    break
+
+            if not main_project_path:
+                raise Exception("Couldn't determine project path {self.target_project} {main_project_path}")
+
+            main_project_path = main_project_path.replace('\\', '/')
+            main_project_path = sln.parent / main_project_path
+
+            if not len(files):
+                company = fake.company()
+                title = company.split(' ')[0].split('-')[0].removesuffix(',')
+                self.randomize_file_name(main_project_path, title)
 
         for file in files:
             print(f"        File {file.absolute()}:")
@@ -237,13 +252,8 @@ class StudioRandomizer(Link):
                 "FileVersion": genInfo("FileVersion", version)
             }
 
-            if self.target_project:
-                main_project_path = projects_path.get(self.target_project)
-                if not main_project_path:
-                    raise Exception("Couldn't determine project path {self.target_project} {main_project_path}")
-
-                main_project_path = main_project_path.replace('\\', '/')
-                if str(file).startswith(str(self.output.path / Path(main_project_path).parent)):
+            if main_project_path:
+                if str(file).startswith(str(main_project_path.parent)):
                     if self.assemblyAttributes:
                         for k in assemblyInfo.keys():
                             assemblyInfo[k] = genInfo(k, self.assemblyAttributes.get(k, ""))

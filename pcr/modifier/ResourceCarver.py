@@ -54,7 +54,7 @@ class ResourceCarver(Link):
 
         if self.version_directory_config:
             if isinstance(self.version_directory_config, Obj):
-                config = self.version_directory_config.get()
+                config = dict(self.version_directory_config.items())
             else:
                 config = self.version_directory_config
 

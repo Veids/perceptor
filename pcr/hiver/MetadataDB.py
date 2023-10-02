@@ -113,7 +113,7 @@ signature length: {len(signature_blob)}""")
             originalFilename = originalFilename
         )
 
-    def get(self, pe_type = "etc"):
+    def get(self, pe_type):
         metadata = Metadata.select().where(Metadata.pe_type == pe_type).order_by(fn.Random()).get()
 
         icon_blob = zlib.decompress(metadata.icon)
@@ -139,7 +139,7 @@ signature length: {len(signature_blob)}""")
                 "manifest_directory_config": json.loads(metadata.manifest_directory_config),
                 "signature": signature_blob,
                 "assemblyInfo": json.loads(metadata.assemblyInfo),
-                "assemblyAttributes": json.loads(metadata.assemblyAttributes),
+                "assemblyAttributes": json.loads(metadata.assemblyAttributes) if metadata.assemblyAttributes else None,
                 "originalFilename": metadata.originalFilename
             }
         )
