@@ -6,7 +6,7 @@ from typing import ClassVar, Optional
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.traceback import install
-install(show_locals=True)
+install(show_locals=False)
 
 console = Console()
 FORMAT = "%(message)s"

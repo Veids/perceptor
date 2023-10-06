@@ -99,6 +99,19 @@
             HANDLE hThread,
             ULONG_PTR dwData
         );
+    {% elif name == "CreateProcessA" %}
+        typedef BOOL (WINAPI *CreateProcessA_t)(
+            LPCSTR lpApplicationName,
+            LPSTR lpCommandLine,
+            LPSECURITY_ATTRIBUTES lpProcessAttributes,
+            LPSECURITY_ATTRIBUTES lpThreadAttributes,
+            BOOL bInheritHandles,
+            DWORD dwCreationFlags,
+            LPVOID lpEnvironment,
+            LPCSTR lpCurrentDirectory,
+            LPSTARTUPINFOA lpStartupInfo,
+            LPPROCESS_INFORMATION lpProcessInformation
+        );
     {% else %}
         {{ raise("Function is unknown" . name) }}
     {% endif %}

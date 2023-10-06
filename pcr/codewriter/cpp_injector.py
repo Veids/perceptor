@@ -1,4 +1,5 @@
 import jinja2
+import pydantic
 
 from enum import Enum
 from typing_extensions import TypedDict
@@ -58,6 +59,17 @@ class cpp_injector(Link):
     target_process_name: str
     starter_type: StarterTypeEnum = StarterTypeEnum.basic
     wait_for_termination: Optional[bool] = False
+    early_bird: Optional[bool] = False
+
+    @pydantic.validator("early_bird")
+    @classmethod
+    def validate_early_bird(cls, field_value, values):
+        if not field_value:
+            return field_value
+
+        if values["starter_type"] != StarterTypeEnum.apc:
+            raise ValueError("When using early_bird you should change your starter_type to apc")
+        return field_value
 
     def load_template(self):
         env = jinja2.Environment(

@@ -69,7 +69,11 @@ class LLVMPass(Link):
         rprint("    [bold green]>[/bold green] Obtaining LLVM IR")
         rprint(f"    [bold green]>[/bold green] {' '.join(clang_cmd)}")
 
-        stdout = subprocess.check_output(clang_cmd, stderr = subprocess.STDOUT)
+        try:
+            stdout = subprocess.check_output(clang_cmd, stderr = subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            print(e.output.decode())
+            raise e
         print(stdout.decode())
 
     def opt_pass(self):

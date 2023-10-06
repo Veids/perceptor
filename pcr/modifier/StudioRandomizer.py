@@ -6,7 +6,6 @@ import string
 from faker import Faker
 
 from enum import Enum
-from pathlib import Path
 from typing import ClassVar, List, Optional
 from rich import print
 from rich.markup import escape
