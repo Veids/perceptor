@@ -25,13 +25,17 @@ class LLVMPass(Link):
     resources: Optional[List[str]] = []
     version_info: Optional[FilePath] = None
     passes: str
+    dll: Optional[bool] = False
 
     def deduce_artifact(self) -> Artifact:
+        extension = "exe"
+        if self.dll:
+            extension = "dll"
         return Artifact(
             type = ArtifactType.PE,
             os = self.input.output.os,
             arch = self.input.output.arch,
-            path = str(self.config["main"].tmp / f"stage.{self.id}.exe"),
+            path = str(self.config["main"].tmp / f"stage.{self.id}.{extension}"),
             obj = None
         )
 
@@ -49,6 +53,9 @@ class LLVMPass(Link):
             "-Wl,--subsystem,console",
             "-Xclang", "-flto-visibility-public-std"
         ] + self.linker_args
+
+    def dll_args(self):
+        return ["-shared"] if self.dll else []
 
     def clang_emit_args(self):
         return [
@@ -177,6 +184,7 @@ class LLVMPass(Link):
             f"{self.output.path}.bc"
         ]
         clang_cmd += self.clang_args()
+        clang_cmd += self.dll_args()
         clang_cmd += self.resources
         clang_cmd += ["-o", f"{self.output.path}"]
         clang_cmd = " ".join(clang_cmd)
