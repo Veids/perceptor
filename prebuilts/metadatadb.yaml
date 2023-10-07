@@ -23,6 +23,13 @@ chain: !Chain
       name: Extract version from PE
       entity: version
       target: *target
+      do_raise: True
+
+    - !extractor.PExtractor
+      &exports
+      name: Extract exports from PE
+      entity: exports
+      target: *target
 
     - !signer.SigThief
       &signature
@@ -38,3 +45,4 @@ chain: !Chain
       version: *version
       manifest: *manifest
       signature: *signature
+      exports: *exports

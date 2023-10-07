@@ -18,6 +18,7 @@ class Link(BaseModel, YamlFuck, ABC):
     id: Optional[int] = None
     links: Optional[List[InstanceOf[Link]]] = None
     name: str
+    do_raise: Optional[bool] = False
 
     @abstractmethod
     def process(self, links):
@@ -68,6 +69,9 @@ class Obj(BaseModel):
 
     def __getitem__(self, key):
         return self.instance.output.obj[self.prop][key]
+
+    def is_none(self):
+        return self.instance.output.obj.get(self.prop) == None
 
 
 def args_constructor(args):

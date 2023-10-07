@@ -24,6 +24,7 @@ class LLVMPass(Link):
     linker_args: Optional[List[str]] = []
     resources: Optional[List[str]] = []
     version_info: Optional[FilePath] = None
+    generate_empty_version: Optional[bool] = False
     passes: str
     dll: Optional[bool] = False
 
@@ -64,6 +65,14 @@ class LLVMPass(Link):
             "-Xclang", "-no-opaque-pointers"
         ]
 
+    @staticmethod
+    def subprocess_wrap(*args, **kwargs):
+        try:
+            return subprocess.check_output(*args, **kwargs)
+        except subprocess.CalledProcessError as e:
+            print(e.output.decode())
+            raise e
+
     def generate_llvm_ir(self):
         clang_cmd = [
             str(self.config["compiler"]["LLVMPass"].clangpp),
@@ -76,11 +85,7 @@ class LLVMPass(Link):
         rprint("    [bold green]>[/bold green] Obtaining LLVM IR")
         rprint(f"    [bold green]>[/bold green] {' '.join(clang_cmd)}")
 
-        try:
-            stdout = subprocess.check_output(clang_cmd, stderr = subprocess.STDOUT)
-        except subprocess.CalledProcessError as e:
-            print(e.output.decode())
-            raise e
+        stdout = LLVMPass.subprocess_wrap(clang_cmd, stderr = subprocess.STDOUT)
         print(stdout.decode())
 
     def opt_pass(self):
@@ -98,7 +103,7 @@ class LLVMPass(Link):
         rprint("    [bold green]>[/bold green] Running passes on the obtained LLVM IR")
         rprint(f"    [bold green]>[/bold green] {opt_cmd}")
 
-        stdout = subprocess.check_output(opt_cmd, stderr = subprocess.STDOUT, shell=True)
+        stdout = LLVMPass.subprocess_wrap(opt_cmd, stderr = subprocess.STDOUT, shell=True)
         print(stdout.decode())
 
     def build_resource(self, input, output):
@@ -113,7 +118,7 @@ class LLVMPass(Link):
         ]
         windres_cmd = " ".join(windres_cmd)
         rprint(f"    [bold green]>[/bold green] {windres_cmd}")
-        return subprocess.check_output(windres_cmd, stderr = subprocess.STDOUT, shell=True)
+        return LLVMPass.subprocess_wrap(windres_cmd, stderr = subprocess.STDOUT, shell=True)
 
     def generate_icon(self):
         if self.icon is not None:
@@ -141,6 +146,41 @@ class LLVMPass(Link):
             self.resources.append(icon_res_path)
 
     def generate_version_info(self):
+        if not self.version_info and self.generate_empty_version:
+            self.version_info = self.config["main"].tmp / "version_info.rc"
+            filetype = "VFT_DLL" if self.dll else "VFT_APP"
+            self.version_info.write_text(f"""#include <winver.h>
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 0,0,0,1
+ PRODUCTVERSION 0,0,0,1
+ FILEFLAGSMASK 0x3fL
+ FILEFLAGS 0
+ FILEOS VOS__WINDOWS32
+ FILETYPE {filetype}
+ FILESUBTYPE VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "\0"
+            VALUE "FileDescription", "Your Application"
+            VALUE "FileVersion", "\0"
+            VALUE "InternalName", "Your"
+            VALUE "LegalCopyright", "\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "Your.exe"
+            VALUE "ProductName", "Your Application"
+            VALUE "ProductVersion", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+""")
+
         if self.version_info is not None:
             if not self.version_info.exists():
                 raise AttributeError(f"Version info file {self.version_info} doesn't exist")
@@ -156,7 +196,10 @@ class LLVMPass(Link):
     def generate_manifest(self):
         if self.manifest is not None:
             if isinstance(self.manifest, Link):
-                manifest_path = self.manifest.output.path
+                if self.manifest.output.path.exists():
+                    manifest_path = self.manifest.output.path
+                else:
+                    return
             else:
                 manifest_path = self.manifest
 
@@ -192,7 +235,7 @@ class LLVMPass(Link):
         rprint("    [bold green]>[/bold green] Compiling...")
         rprint(f"    [bold green]>[/bold green] {clang_cmd}")
 
-        stdout = subprocess.check_output(clang_cmd, stderr = subprocess.STDOUT, shell=True)
+        stdout = LLVMPass.subprocess_wrap(clang_cmd, stderr = subprocess.STDOUT, shell=True)
         print(stdout.decode())
 
     def process(self):

@@ -104,7 +104,7 @@ def copyCert(exe):
     if flItms['CertLOC'] == 0 or flItms['CertSize'] == 0:
         # not signed
         print("Input file Not signed!")
-        sys.exit(-1)
+        return None
 
     with open(exe, 'rb') as f:
         f.seek(flItms['CertLOC'], 0)
@@ -137,6 +137,9 @@ def writeCert(cert, exe, output):
 
 def outputCert(exe, output):
     cert = copyCert(exe)
+    if not cert:
+        return
+
     if not output:
         output = str(exe) + "_sig"
 

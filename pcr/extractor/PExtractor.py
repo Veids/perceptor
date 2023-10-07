@@ -15,7 +15,7 @@ class EntityEnum(str, Enum):
     icon = "icon"
     manifest = "manifest"
     version = "version"
-    netguid = "netguid"
+    exports = "exports"
 
 
 class PExtractor(Link):
@@ -30,8 +30,8 @@ class PExtractor(Link):
             extension = "xml"
         elif self.entity == EntityEnum.version:
             extension = "bin"
-        elif self.entity == EntityEnum.netguid:
-            extension = "json"
+        elif self.entity == EntityEnum.exports:
+            extension = "txt"
 
         return Artifact(
             type = ArtifactType.RAW,
@@ -95,6 +95,14 @@ class PExtractor(Link):
 
         return assemblyAttributes
 
+    def extract_exports(self, target):
+        if target.has_exports:
+            names = [x.name for x in target.exported_functions]
+            self.output.obj = {
+                "exports": names
+            }
+            self.output.path.write_text("\n".join(names))
+
     def process(self):
         self.output = self.deduce_artifact()
         target = lief.parse(str(self.target))
@@ -104,7 +112,10 @@ class PExtractor(Link):
 
         if self.entity == EntityEnum.icon:
             if not target.resources_manager.has_icons:
-                raise ValueError(f"Target {target.name} has no icons")
+                if self.do_raise:
+                    raise ValueError(f"Target {target.name} has no icons")
+                else:
+                    return
 
             tmp = self.config["main"].tmp
             temp_icon = str(tmp / f"stage.{self.id}.temp.ico")
@@ -118,7 +129,10 @@ class PExtractor(Link):
                 ico.save(filename = self.output.path)
         elif self.entity == EntityEnum.manifest:
             if not target.resources_manager.has_manifest:
-                raise ValueError(f"Target {target.name} has no manifest")
+                if self.do_raise:
+                    raise ValueError(f"Target {target.name} has no manifest")
+                else:
+                    return
 
             manifest = target.resources_manager.manifest
 
@@ -126,8 +140,7 @@ class PExtractor(Link):
             manifest_dict = xmltodict.parse(manifest.removeprefix("\\xef\\xbb\\xbf"))
             assembly = manifest_dict["assembly"]
             if assembly is not None:
-                assemblyIdentity = assembly["assemblyIdentity"]
-                if assemblyIdentity is not None:
+                if assemblyIdentity := assembly.get("assemblyIdentity"):
                     for k, v in assemblyIdentity.items():
                         obj[k.replace('@', '')] = v
 
@@ -153,13 +166,19 @@ class PExtractor(Link):
             self.output.write(manifest.encode())
         elif self.entity == EntityEnum.version:
             if not target.resources_manager.has_version:
-                raise ValueError(f"Target {target.name} has no manifest")
+                if self.do_raise:
+                    raise ValueError(f"Target {target.name} has no manifest")
+                else:
+                    return
 
             version_node = next(iter(filter(lambda e: e.id == lief.PE.RESOURCE_TYPES.VERSION.value, target.resources.childs)))
             id_node = version_node.childs[0]
             lang_node = id_node.childs[0]
 
             pe_type = "net" if self.is_dotnet(target) else "etc"
+
+            if target.header.characteristics & lief.PE.HEADER_CHARACTERISTICS.DLL:
+                pe_type += "_dll"
 
             assemblyAttributes = None
             if pe_type == "net":
@@ -187,8 +206,8 @@ class PExtractor(Link):
             }
 
             self.output.write(lang_node.content.tobytes())
-        elif self.entity == EntityEnum.netguid:
-            self.extract_netguid(target)
+        elif self.entity == EntityEnum.exports:
+            self.extract_exports(target)
 
     def info(self) -> str:
         return "Extract resources from PE file"

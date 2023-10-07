@@ -48,6 +48,11 @@ class Manifestor(Link):
         if not self.manifest:
             document = parse(str(self.input.output.path))
         else:
+            if self.manifest.is_none():
+                if self.do_raise:
+                    raise ValueError("There's no manifest to process")
+                return
+
             document = parseString(bytes(self.manifest).decode().removeprefix("\\xef\\xbb\\xbf"))
         document = document.childNodes[0]
 

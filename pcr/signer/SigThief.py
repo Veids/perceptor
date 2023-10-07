@@ -1,3 +1,5 @@
+import shutil
+
 from typing import ClassVar
 from pydantic import FilePath
 from enum import Enum
@@ -31,6 +33,13 @@ class SigThief(Link):
 
         if self.action == ActionEnum.write:
             if isinstance(self.target, Obj):
+                if self.target.is_none():
+                    if self.do_raise:
+                        raise ValueError("There is no signature to append")
+                    else:
+                        print("No signature was appended")
+                        shutil.copy(self.input.output.path, self.output.path)
+                        return
                 cert = bytes(self.target)
             else:
                 cert = copyCert(str(self.target))
