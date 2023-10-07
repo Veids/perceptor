@@ -71,7 +71,10 @@ class Obj(BaseModel):
         return self.instance.output.obj[self.prop][key]
 
     def is_none(self):
-        return self.instance.output.obj.get(self.prop) == None
+        return self.instance.output.obj.get(self.prop) is None
+
+    def item(self):
+        return self.instance.output.obj[self.prop]
 
 
 def args_constructor(args):

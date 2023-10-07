@@ -27,16 +27,22 @@ class LLVMPass(Link):
     generate_empty_version: Optional[bool] = False
     passes: str
     dll: Optional[bool] = False
+    exports: Optional[Obj] = None
+    out_name: Optional[Obj] = None
 
     def deduce_artifact(self) -> Artifact:
         extension = "exe"
         if self.dll:
             extension = "dll"
+        out_name = f"stage.{self.id}.{extension}"
+        if self.out_name:
+            out_name = str(self.out_name)
+
         return Artifact(
             type = ArtifactType.PE,
             os = self.input.output.os,
             arch = self.input.output.arch,
-            path = str(self.config["main"].tmp / f"stage.{self.id}.{extension}"),
+            path = str(self.config["main"].tmp / out_name),
             obj = None
         )
 
@@ -216,10 +222,42 @@ END
 
             self.resources.append(manifest_res_path)
 
+    def generate_exports(self):
+        if self.exports is None or self.exports.is_none():
+            return
+
+        exports = self.exports.item()
+        filtered = ["DllMain"]
+        exports = list(filter(lambda x: x not in filtered, exports))
+
+        text = ""
+        for export in exports:
+            text += f"extern \"C\" __declspec(dllexport) bool {export}" + "(){return true;}\n"
+        exports_path = self.config["main"].tmp / f"stage.{self.id}.exports.cpp"
+        exports_path.write_text(text)
+        exports_out_path = str(self.config["main"].tmp / f"stage.{self.id}.exports.o")
+
+        clang_cmd = [
+            str(self.config["compiler"]["LLVMPass"].clangpp),
+            str(exports_path)
+        ]
+        clang_cmd += self.clang_args()
+        clang_cmd += ["-c"]
+        clang_cmd += ["-o", exports_out_path]
+
+        rprint(f"    [bold green]>[/bold green] Generating exports ({len(exports)})")
+        rprint(f"    [bold green]>[/bold green] {' '.join(clang_cmd)}")
+
+        stdout = LLVMPass.subprocess_wrap(clang_cmd, stderr = subprocess.STDOUT)
+        print(stdout.decode())
+
+        self.resources.append(exports_out_path)
+
     def generate_resources(self):
         self.generate_icon()
         self.generate_version_info()
         self.generate_manifest()
+        self.generate_exports()
 
     def clang_compile(self):
         clang_cmd = [
