@@ -1,4 +1,5 @@
 import os
+import ruamel
 
 from typing import ClassVar, Optional, ForwardRef, List
 from abc import ABC, abstractmethod
@@ -79,9 +80,18 @@ class Obj(BaseModel):
 
 def args_constructor(args):
     def wrapper(loader, node):
-        return args[args.index(node.value) + 1]
-    return wrapper
+        if isinstance(node, ruamel.yaml.nodes.ScalarNode):
+            return args[args.index(node.value) + 1]
+        elif isinstance(node, ruamel.yaml.nodes.SequenceNode):
+            value, conv = loader.construct_sequence(node)
+            if conv != "list":
+                return
 
+            try:
+                return args[args.index(value) + 1].split(" ")
+            except ValueError:
+                return []
+    return wrapper
 
 def env_constructor(loader, node):
     return os.environ[node.value]
