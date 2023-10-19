@@ -1,6 +1,8 @@
 import subprocess
 import xml.dom.minidom
 
+from enum import Enum
+from pathlib import Path
 from pydantic import InstanceOf, FilePath, BaseModel
 from typing import ClassVar, List, Optional
 from rich import print as rprint
@@ -17,6 +19,10 @@ class LLVMPassConfig(BaseModel, YamlFuck):
     plugin: FilePath
 
 
+class FilesEnum(str, Enum):
+    all = "all"
+
+
 class LLVMPass(Link):
     yaml_tag: ClassVar[str] = u"!compiler.LLVMPass"
     icon: Optional[FilePath | InstanceOf[Link] | Obj] = None
@@ -29,6 +35,9 @@ class LLVMPass(Link):
     dll: Optional[bool] = False
     exports: Optional[Obj] = None
     out_name: Optional[Obj] = None
+    files: Optional[FilesEnum | List[Path]] = None
+
+    sources: Optional[List[str]] = None
 
     def deduce_artifact(self) -> Artifact:
         extension = "exe"
@@ -46,9 +55,23 @@ class LLVMPass(Link):
             obj = None
         )
 
-    def clang_args(self):
+    def llvm_ir_args(self):
         return [
             "-O3",
+            "-pthread",
+            "-s",
+            "-w",
+            "-fpermissive",
+            "-std=c++2a",
+            "-static",
+            "-lpsapi",
+            "-lntdll",
+            "-Wl,--subsystem,console",
+            "-Xclang", "-flto-visibility-public-std"
+        ] + self.linker_args
+
+    def clang_args(self):
+        return [
             "-pthread",
             "-s",
             "-w",
@@ -80,18 +103,36 @@ class LLVMPass(Link):
             raise e
 
     def generate_llvm_ir(self):
-        clang_cmd = [
-            str(self.config["compiler"]["LLVMPass"].clangpp),
-            str(self.input.output.path)
+        for i, source in enumerate(self.sources):
+            clang_cmd = [
+                str(self.config["compiler"]["LLVMPass"].clangpp),
+                str(source)
+            ]
+            clang_cmd += self.llvm_ir_args()
+            clang_cmd += self.clang_emit_args()
+
+            clang_cmd += ["-o", f"{self.output.path}.{i}.ll"]
+
+            rprint("    [bold green]>[/bold green] Obtaining LLVM IR")
+            rprint(f"    [bold green]>[/bold green] {' '.join(clang_cmd)}")
+
+            stdout = LLVMPass.subprocess_wrap(clang_cmd, stderr = subprocess.STDOUT)
+            print(stdout.decode())
+
+    def link(self):
+        link_cmd = [
+            "llvm-link",
+            "-S",
+            "-v",
+            "-opaque-pointers=0",
         ]
-        clang_cmd += self.clang_args()
-        clang_cmd += self.clang_emit_args()
-        clang_cmd += ["-o", f"{self.output.path}.ll"]
+        link_cmd += [f"{self.output.path}.{i}.ll" for i in range(len(self.sources))]
+        link_cmd += ["-o", f"{self.output.path}.ll"]
 
-        rprint("    [bold green]>[/bold green] Obtaining LLVM IR")
-        rprint(f"    [bold green]>[/bold green] {' '.join(clang_cmd)}")
+        rprint("    [bold green]>[/bold green] Linking LLVM IR")
+        rprint(f"    [bold green]>[/bold green] {' '.join(link_cmd)}")
 
-        stdout = LLVMPass.subprocess_wrap(clang_cmd, stderr = subprocess.STDOUT)
+        stdout = LLVMPass.subprocess_wrap(link_cmd, stderr = subprocess.STDOUT)
         print(stdout.decode())
 
     def opt_pass(self):
@@ -241,7 +282,7 @@ END
             str(self.config["compiler"]["LLVMPass"].clangpp),
             str(exports_path)
         ]
-        clang_cmd += self.clang_args()
+        clang_cmd += self.llvm_ir_args()
         clang_cmd += ["-c"]
         clang_cmd += ["-o", exports_out_path]
 
@@ -276,9 +317,28 @@ END
         stdout = LLVMPass.subprocess_wrap(clang_cmd, stderr = subprocess.STDOUT, shell=True)
         print(stdout.decode())
 
+    def preprocess(self):
+        if self.files is None or len(self.files) == 0:
+            if self.input.output.path.is_file():
+                self.sources = [str(self.input.output.path)]
+            else:
+                self.sources = [str(self.input.output.path / "main.cpp")]
+        else:
+            if self.input.output.path.is_file():
+                raise ValueError("You should specify directory in order to support multi-file compilation")
+
+            if self.files == FilesEnum.all:
+                self.sources += [str(x) for x in self.input.output.path.rglob("*.cpp")]
+            else:
+                self.sources = []
+                for file in self.files:
+                    self.sources.append(str(self.input.output.path / file))
+
     def process(self):
         self.output = self.deduce_artifact()
+        self.preprocess()
         self.generate_llvm_ir()
+        self.link()
         self.opt_pass()
         self.generate_resources()
         self.clang_compile()

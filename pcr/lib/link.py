@@ -79,19 +79,27 @@ class Obj(BaseModel):
 
 
 def args_constructor(args):
+    def construct(name, conv = "str", default = None):
+        if name not in args:
+            return default
+
+        value = args[args.index(name) + 1]
+        if conv == "list":
+            return value.split()
+
+        return value
+
     def wrapper(loader, node):
         if isinstance(node, ruamel.yaml.nodes.ScalarNode):
-            return args[args.index(node.value) + 1]
+            return construct(node.value)
         elif isinstance(node, ruamel.yaml.nodes.SequenceNode):
             value, conv = loader.construct_sequence(node)
-            if conv != "list":
-                return
-
-            try:
-                return args[args.index(value) + 1].split(" ")
-            except ValueError:
-                return []
+            return construct(value, conv, [])
+        elif isinstance(node, ruamel.yaml.nodes.MappingNode):
+            d = list(loader.construct_yaml_map(node))[0]
+            return construct(d["name"], d.get("conv"), d.get("default"))
     return wrapper
+
 
 def env_constructor(loader, node):
     return os.environ[node.value]
