@@ -8,7 +8,7 @@ from pathlib import Path
 from pcr.lib.common import MainConfig
 from pcr.lib.artifact import Artifact, ArtifactType, ArtifactOS, ArtifactArch
 from pcr.lib.chain import Chain
-from pcr.lib.link import Stdin, Obj, args_constructor, env_constructor
+from pcr.lib.link import Stdin, Obj, args_constructor, env_constructor, flatten_constructor
 
 # Link imports are here
 from pcr.converter.Donut import Donut, DonutConfig
@@ -104,7 +104,8 @@ def get_yaml(classes, constructors = None):
 def load_chain(args, unknown):
     constructors = {
         "!args": args_constructor(unknown),
-        "!env": env_constructor
+        "!env": env_constructor,
+        "!flatten": flatten_constructor
     }
 
     yaml = get_yaml(YAML_CHAIN, constructors)

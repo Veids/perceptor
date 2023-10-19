@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from pydantic import BaseModel, InstanceOf
 
 from pcr.lib.artifact import Artifact
-from pcr.lib.common import YamlFuck
+from pcr.lib.common import YamlFuck, flatten
 
 Link = ForwardRef("Link")
 
@@ -103,3 +103,11 @@ def args_constructor(args):
 
 def env_constructor(loader, node):
     return os.environ[node.value]
+
+
+def flatten_constructor(loader, node):
+    if not isinstance(node, ruamel.yaml.nodes.SequenceNode):
+        raise ValueError("You should pass an array")
+
+    seq = loader.construct_sequence(node)
+    return list(flatten(seq))

@@ -16,6 +16,15 @@ log.propagate = False
 log.setLevel(logging.INFO)
 
 
+def flatten(_list):
+    for x in _list:
+        if hasattr(x, '__iter__') and not isinstance(x, str):
+            for y in flatten(x):
+                yield y
+        else:
+            yield x
+
+
 class YamlFuck:
     @classmethod
     def from_yaml(cls, constructor, node):
