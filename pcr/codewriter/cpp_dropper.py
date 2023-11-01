@@ -68,7 +68,7 @@ class cpp_dropper(Link):
             print("    [bold yellow]![/bold yellow] Payload size is too high to place it into the stack, consider switching to another location")
 
     def sections_warning(self):
-        if self.input.output.path.stat().st_size > STACK_SIZE_WARNING:
+        if self.alloc["method"] == AllocMethodEnum.sections and self.input.output.path.stat().st_size > STACK_SIZE_WARNING:
             print("    [bold yellow]![/bold yellow] Payload size is too high to place using sections, consider switching to another method")
 
     def process(self):

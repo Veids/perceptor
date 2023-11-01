@@ -14,6 +14,7 @@ from pcr.lib.artifact import Artifact, ArtifactType
 
 class LLVMPassConfig(BaseModel, YamlFuck):
     yaml_tag: ClassVar[str] = u"!compiler.LLVMPassConfig"
+    clang: FilePath
     clangpp: FilePath
     windres: Optional[FilePath]
     plugin: FilePath
@@ -36,6 +37,7 @@ class LLVMPass(Link):
     exports: Optional[Obj] = None
     out_name: Optional[Obj] = None
     files: Optional[FilesEnum | List[Path]] = None
+    cpp: bool = True
 
     sources: Optional[List[str]] = None
 
@@ -62,7 +64,6 @@ class LLVMPass(Link):
             "-s",
             "-w",
             "-fpermissive",
-            "-std=c++2a",
             "-static",
             "-lpsapi",
             "-lntdll",
@@ -76,7 +77,6 @@ class LLVMPass(Link):
             "-s",
             "-w",
             "-fpermissive",
-            "-std=c++2a",
             "-static",
             "-lpsapi",
             "-lntdll",
@@ -102,10 +102,16 @@ class LLVMPass(Link):
             print(e.output.decode())
             raise e
 
+    def get_compiler(self):
+        if self.cpp:
+            return self.config["compiler"]["LLVMPass"].clangpp
+        else:
+            return self.config["compiler"]["LLVMPass"].clang
+
     def generate_llvm_ir(self):
         for i, source in enumerate(self.sources):
             clang_cmd = [
-                str(self.config["compiler"]["LLVMPass"].clangpp),
+                str(self.get_compiler()),
                 str(source)
             ]
             clang_cmd += self.llvm_ir_args()
@@ -279,7 +285,7 @@ END
         exports_out_path = str(self.config["main"].tmp / f"stage.{self.id}.exports.o")
 
         clang_cmd = [
-            str(self.config["compiler"]["LLVMPass"].clangpp),
+            str(self.get_compiler()),
             str(exports_path)
         ]
         clang_cmd += self.llvm_ir_args()
@@ -302,7 +308,7 @@ END
 
     def clang_compile(self):
         clang_cmd = [
-            str(self.config["compiler"]["LLVMPass"].clangpp),
+            str(self.get_compiler()),
             f"{self.output.path}.bc"
         ]
         clang_cmd += self.clang_args()
