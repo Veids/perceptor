@@ -6,6 +6,7 @@ converter:
     path: "/opt/donut"
 compiler:
   LLVMPass: !compiler.LLVMPassConfig
+    clang: "/usr/local/bin/x86_64-w64-mingw32-clang"
     clangpp: "/usr/local/bin/x86_64-w64-mingw32-clang++"
     windres: "/usr/bin/llvm-windres-16"
     plugin: "/opt/libSsageObfuscator.so"

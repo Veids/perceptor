@@ -90,8 +90,7 @@ class LLVMPass(Link):
     def clang_emit_args(self):
         return [
             "-S",
-            "-emit-llvm",
-            "-Xclang", "-no-opaque-pointers"
+            "-emit-llvm"
         ]
 
     @staticmethod
@@ -129,8 +128,7 @@ class LLVMPass(Link):
         link_cmd = [
             "llvm-link",
             "-S",
-            "-v",
-            "-opaque-pointers=0",
+            "-v"
         ]
         link_cmd += [f"{self.output.path}.{i}.ll" for i in range(len(self.sources))]
         link_cmd += ["-o", f"{self.output.path}.ll"]
@@ -144,7 +142,6 @@ class LLVMPass(Link):
     def opt_pass(self):
         opt_cmd = [
             "opt",
-            "-opaque-pointers=0",
             "-load-pass-plugin",
             str(self.config["compiler"]["LLVMPass"].plugin),
             f"-passes=\"{self.passes}\"",
