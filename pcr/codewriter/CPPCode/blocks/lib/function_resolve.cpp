@@ -1,6 +1,6 @@
 {% if FUNCTIONRESOLVEINCLUDED is not defined %}
 {% set FUNCTIONRESOLVEINCLUDED = 1 %}
-{% include "lib/pe.cpp" %}
+{% include "blocks/lib/pe.cpp" %}
 
 typedef HMODULE (WINAPI * LoadLibrary_t)(LPCSTR lpFileName);
 LoadLibrary_t pLoadLibraryA = NULL;

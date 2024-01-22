@@ -1,11 +1,11 @@
+{% from "macros.jinja" import function_typedef, function_definition, createThreadStub with context %}
+
 {% if section == "globals" %}
-    {% if link.alloc.functions.value in ["dynamic", "direct"] %}
-        {{ function_typedef("CreateRemoteThread") }}
-    {% endif %}
+    {{ function_typedef("CreateRemoteThread") }}
 {% else %}
     {{ function_definition("CreateRemoteThread") }}
     HANDLE hThread = pCreateRemoteThread(hProc, NULL, 0, (LPTHREAD_START_ROUTINE) mem, NULL, 0, NULL);
-    {% if link.wait_for_termination %}
+    {% if wait_for_termination %}
       if (hThread != NULL) {
           WaitForSingleObject(hThread, 500);
           CloseHandle(hThread);

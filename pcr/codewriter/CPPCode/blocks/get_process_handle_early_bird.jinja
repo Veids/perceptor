@@ -1,0 +1,18 @@
+{% from "macros.jinja" import function_typedef, function_definition, createThreadStub with context %}
+
+{% if section == "globals" %}
+    {{ function_typedef("CreateProcessA") }}
+{% else %}
+    {{ function_definition("CreateProcessA") }}
+
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    ZeroMemory(&pi, sizeof(pi));
+
+    pCreateProcessA(0, "{{ target }}", 0, 0, 0, CREATE_SUSPENDED, 0, 0, &si, &pi);
+
+    HANDLE hProc = pi.hProcess;
+    HANDLE hThread = pi.hThread;
+{% endif %}

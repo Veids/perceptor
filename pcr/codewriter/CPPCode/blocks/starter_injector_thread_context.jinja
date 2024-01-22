@@ -1,10 +1,8 @@
 {% if section == "globals" %}
-    {% if link.alloc.functions.value in ["dynamic", "direct"] %}
-        {{ function_typedef("SuspendThread") }}
-        {{ function_typedef("GetThreadContext") }}
-        {{ function_typedef("SetThreadContext") }}
-        {{ function_typedef("ResumeThread") }}
-    {% endif %}
+    {{ function_typedef("SuspendThread") }}
+    {{ function_typedef("GetThreadContext") }}
+    {{ function_typedef("SetThreadContext") }}
+    {{ function_typedef("ResumeThread") }}
 
     {% include "lib/find_thread.cpp" %}
 

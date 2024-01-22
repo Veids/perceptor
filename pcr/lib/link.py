@@ -2,7 +2,7 @@ import os
 import typing
 import ruamel
 
-from typing import ClassVar, Optional, ForwardRef, List, Generic, TypeVar
+from typing import ClassVar, Optional, ForwardRef, List
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, InstanceOf
 
@@ -30,10 +30,20 @@ class Link(BaseModel, YamlFuck, ABC):
     def info(self) -> str:
         pass
 
-    def preprocess(self):
+    def _pre(self):
         for k, v in self.__dict__.items():
             if isinstance(v, Obj):
                 setattr(self, k, v.get())
+
+
+class EncoderLink(Link):
+    decoder_data: Optional[dict] = None
+
+
+class CppBlocks(Link):
+    def process(self):
+        template = self.load_template()
+        return self.render_template(template, "globals"), self.render_template(template, "text")
 
 
 class Stdin(Link):
@@ -73,30 +83,6 @@ class Obj(BaseModel):
         for x in self.prop.split('.'):
             data = getattr(data, x)
         return data
-
-    # def keys(self):
-    #     return self.instance.obj[self.prop].keys()
-
-    # def get(self, *args):
-    #     return self.instance.obj[self.prop].get(*args)
-
-    # def items(self):
-    #     return self.instance.obj[self.prop].items()
-
-    # def __str__(self):
-    #     return self.instance.obj[self.prop]
-
-    # def __bytes__(self):
-    #     return self.instance.obj[self.prop]
-
-    # def __getitem__(self, key):
-    #     return self.instance.obj[self.prop][key]
-
-    # def is_none(self):
-    #     return self.instance.obj.get(self.prop) is None
-
-    # def item(self):
-    #     return self.instance.obj[self.prop]
 
 
 def args_constructor(args):

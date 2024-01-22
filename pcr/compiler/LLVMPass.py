@@ -26,15 +26,15 @@ class FilesEnum(str, Enum):
 
 class LLVMPass(Link):
     yaml_tag: ClassVar[str] = u"!compiler.LLVMPass"
-    icon: Optional[FilePath | InstanceOf[Link] | Obj] = None
-    manifest: Optional[FilePath | InstanceOf[Link] | Obj] = None
+    icon: Optional[FilePath | InstanceOf[Link] | bytes | Obj] = None
+    manifest: Optional[FilePath | InstanceOf[Link]] = None
     linker_args: Optional[List[str]] = []
     resources: Optional[List[str]] = []
     version_info: Optional[FilePath] = None
     generate_empty_version: Optional[bool] = False
     passes: str
     dll: Optional[bool] = False
-    exports: Optional[Obj] = None
+    exports: Optional[List[str] | Obj] = None
     out_name: Optional[str | Obj] = None
     files: Optional[FilesEnum | List[Path]] = None
     cpp: bool = True
@@ -174,9 +174,9 @@ class LLVMPass(Link):
         if self.icon is not None:
             if isinstance(self.icon, str):
                 icon_path = self.icon
-            if isinstance(self.icon, Obj):
+            if isinstance(self.icon, bytes):
                 icon_path = self.config["main"].tmp / f"stage.{self.id}.icon.ico"
-                icon_path.write_bytes(bytes(self.icon))
+                icon_path.write_bytes(self.icon)
             else:
                 icon_path = self.icon.output.path
 
@@ -250,7 +250,7 @@ END
                     manifest_path = self.manifest.output.path
                 else:
                     return
-            else:
+            elif isinstance(self.manifest, str):
                 manifest_path = self.manifest
 
             manifest_rc_path = str(self.config["main"].tmp / "manifest.rc")

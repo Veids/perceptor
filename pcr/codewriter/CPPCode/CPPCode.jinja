@@ -11,8 +11,9 @@
 {% set section="globals" %}
 {% include "blocks/common_definitions.jinja" %}
 {% include "blocks/decoders.jinja" %}
-{% include "blocks/alloc.jinja" %}
-{% include "blocks/starter.jinja" %}
+{{ definitions }}
+{# {% include "blocks/alloc.jinja" %} #}
+{# {% include "blocks/starter.jinja" %} #}
 {% include "blocks/payload.jinja" %}
 
 DWORD WINAPI run(){
@@ -22,11 +23,7 @@ DWORD WINAPI run(){
     size_t length = sizeof(raw);
 
     {% include "blocks/decoders.jinja" %}
-    {% include "blocks/alloc.jinja" %}
-
-    memset(raw, 0, length);
-
-    {% include "blocks/starter.jinja" %}
+    {{ code }}
     return 0;
 }
 

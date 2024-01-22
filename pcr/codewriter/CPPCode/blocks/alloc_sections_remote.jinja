@@ -1,9 +1,8 @@
+{% from "macros.jinja" import function_typedef, function_definition, createThreadStub with context %}
+
 {% if section == "globals" %}
-    {% include "blocks/get_process_handle.jinja" %}
     {% include "lib/sections.jinja" %}
 {% else %}
-    {% include "blocks/get_process_handle.jinja" %}
-
     HANDLE hSelfProc = GetCurrentProcess();
     void *mem = alloc(hSelfProc, hProc, raw, length);
 {% endif %}

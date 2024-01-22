@@ -1,12 +1,12 @@
 {% macro function_definition(name, module = "KERNEL32.DLL") %}
-    {% if link.alloc.functions.value == "direct" %}
+    {% if link.functions.value == "direct" %}
         {# e.g OpenProcess_t pOpenProcess = OpenProcess; #}
         {{ name }}_t p{{ name }} = {{ name }};
-    {% elif link.alloc.functions.value == "dynamic" %}
+    {% elif link.functions.value == "dynamic" %}
         {# e.g. OpenProcess_t pOpenProcess = (OpenProcess_t) hlpGetProcAddress(hlpGetModuleHandle(L"KERNEL32.DLL"), "OpenProcess"); #}
         {{ name }}_t p{{ name }} = ({{ name }}_t) hlpGetProcAddress(hlpGetModuleHandle(L"{{ module }}"), "{{ name }}");
     {% else %}
-        {{ raise("Function is not implemented" . link.alloc.functions) }}
+        {{ raise("Function is not implemented" . link.functions) }}
     {% endif %}
 {% endmacro %}
 

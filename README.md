@@ -11,18 +11,29 @@ Give that, we have the next yaml definition:
 chain: !Chain
   links:
     - !modifier.XOREncode
+      &xor
       name: Xor encode
       key_length: 30
 
-    - !codewriter.cpp_dropper
-      &code
+    - !codewriter.cpp
       name: Generate dropper
+      functions: dynamic
       output_type: exe
       payload_placement: data
-      alloc:
-        method: basic
-        protection: rx
-        functions: direct
+      decoders:
+        - *xor
+      blocks:
+        - !cpp.alloc
+          name: Alloc memory and copy shellcode
+          method: basic
+          protection: rx
+
+        - !cpp.clean
+          name: Clean raw memory
+          variable: raw
+
+        - !cpp.drop
+          name: Execute shellcode
 
     - !compiler.LLVMPass
       name: Compile
@@ -165,7 +176,8 @@ Or get assemblyInfo from DB
   entities:
     - guid
     - assemblyInfo
-  assemblyInfo: !obj [*metadata, "assemblyInfo"]
+  filename: !obj [*metadata, "assemblyInfo.OriginalFilename"]
+  assemblyAttributes: !obj [*metadata, "assemblyAttributes"]
 ```
 
 ### MvidInjector
@@ -179,35 +191,62 @@ Or get assemblyInfo from DB
 
 ## CodeWriter
 
-### Dropper
+### CPP
+
+#### Dropper
 
 ```yaml
-- !codewriter.cpp_dropper
-  &code
+- !codewriter.cpp
   name: Generate dropper
+  functions: dynamic
   output_type: exe
   payload_placement: data
-  alloc:
-    method: basic|sections
-    protection: rx
-    functions: dynamic
+  decoders:
+    - *xor
+    - *rndb
+    - *rndf
+  blocks:
+    - !cpp.alloc
+      name: Alloc memory and copy shellcode
+      method: basic
+      protection: rx
+
+    - !cpp.clean
+      name: Clean raw memory
+      variable: raw
+
+    - !cpp.drop
+      name: Execute shellcode
 ```
 
-### Injector
+#### Injector
 
 ```yaml
-- !codewriter.cpp_injector
-  &code
-  name: Generate injector
+- !codewriter.cpp
+  name: Generate dropper
+  functions: dynamic
   output_type: exe
-  payload_placement: data|text
-  target_process_name: explorer.exe
-  starter_type: basic|thread_context|apc
-  wait_for_termination: true|false
-  alloc:
-    method: basic|sections
-    protection: rx
-    functions: dynamic
+  payload_placement: data
+  decoders:
+    - *xor
+    - *rndb
+    - *rndf
+  blocks:
+    - !cpp.get_proc_handle
+      name: Get remote process handle
+      target: *process
+
+    - !cpp.alloc_remote
+      name: Alloc memory and copy shellcode
+      method: sections
+      protection: rx
+
+    - !cpp.clean
+      name: Clean raw memory
+      variable: raw
+
+    - !cpp.exec_remote
+      name: Execute shellcode
 ```
 
 ## Extractor
@@ -274,6 +313,16 @@ Outputs several obj fields:
 }
 ```
 
+#### Exports
+
+```yaml
+- !extractor.PExtractor
+  &exports
+  name: Extract exports from PE
+  entity: exports
+  target: *target
+```
+
 ## Converter
 
 ### Donut
@@ -281,7 +330,7 @@ Outputs several obj fields:
 ```yaml
 - !converter.Donut
   name: Donut transform
-  donut_args:
+  donut_args: !flatten
     - "--arch 2"
     - "--method VoidFunc"
     - "--entropy 3"
@@ -393,6 +442,19 @@ Exports obj:
 ```
 
 # Constructors (yaml tags)
+
+## !obj
+
+Extract data from obj attribute from a link
+
+## !flatten
+
+Flatten an array
+
+## !args
+
+Get an argument from cmdline
+
 
 # Credits
 

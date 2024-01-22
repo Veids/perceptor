@@ -1,6 +1,6 @@
 import lief
 
-from typing import ClassVar, Optional, Any
+from typing import ClassVar, Optional
 from pydantic import FilePath
 from rich import print
 
@@ -10,7 +10,7 @@ from pcr.lib.link import Link, Obj
 
 class ResourceCarver(Link):
     yaml_tag: ClassVar[str] = u"!modifier.ResourceCarver"
-    version: Optional[Obj] = None
+    version: Optional[bytes | Obj] = None
     version_directory_config: Optional[dict | Obj] = None
     icon: Optional[FilePath | Obj] = None
 
@@ -66,7 +66,7 @@ class ResourceCarver(Link):
         if not self.icon:
             pass
 
-        print(f"    [bold blue]>[/bold blue] Carved icon")
+        print("    [bold blue]>[/bold blue] Carved icon")
 
     def process(self):
         self.verify_args()

@@ -8,19 +8,16 @@ from rich import print
 from Crypto.Util import strxor
 
 from pcr.lib.artifact import Artifact
-from pcr.lib.link import Link
+from pcr.lib.link import EncoderLink
 
 KEY_LENGTH_RND = 10
 KEY_LENGTH_RND_END = 50
 KEY_ALPHABET = ".+-,:;_%=()" + string.ascii_letters + string.digits
 
 
-class XOREncode(Link):
+class XOREncode(EncoderLink):
     yaml_tag: ClassVar[str] = u"!modifier.XOREncode"
     key_length: Optional[int] = random.randint(KEY_LENGTH_RND, KEY_LENGTH_RND_END)
-
-    decoder_data: dict = {}
-    decoder_required: bool = True
 
     def deduce_artifact(self) -> Artifact:
         return Artifact(

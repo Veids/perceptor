@@ -2,12 +2,13 @@ import jinja2
 
 from enum import Enum
 from typing_extensions import TypedDict
-from typing import ClassVar
+from typing import ClassVar, Optional, List
 from rich import print
+from pydantic import InstanceOf
 
 from pcr.lib.artifact import Artifact, ArtifactType
-from pcr.lib.link import Link
-from pcr.modifier.CreateThreadStub import CreateThreadStub
+from pcr.lib.link import Link, EncoderLink, CppBlocks
+# from pcr.modifier.CreateThreadStub import CreateThreadStub
 
 STACK_SIZE_WARNING = 1024 * 16
 
@@ -42,12 +43,14 @@ class AllocDict(TypedDict):
     functions: FunctionsEnum
 
 
-class cpp_dropper(Link):
-    yaml_tag: ClassVar[str] = u"!codewriter.cpp_dropper"
-    implant_type: ClassVar[str] = "dropper"
+class cpp(Link):
+    yaml_tag: ClassVar[str] = u"!codewriter.cpp"
+
+    functions: FunctionsEnum
     output_type: OutputTypeEnum
     payload_placement: PayloadPlacementEnum
-    alloc: AllocDict
+    decoders: Optional[List[InstanceOf[EncoderLink]]] = None
+    blocks: List[InstanceOf[CppBlocks]]
 
     def load_template(self):
         env = jinja2.Environment(
@@ -67,22 +70,17 @@ class cpp_dropper(Link):
         if self.payload_placement == PayloadPlacementEnum.text and self.input.output.path.stat().st_size > STACK_SIZE_WARNING:
             print("    [bold yellow]![/bold yellow] Payload size is too high to place it into the stack, consider switching to another location")
 
-    def sections_warning(self):
-        if self.alloc["method"] == AllocMethodEnum.sections and self.input.output.path.stat().st_size > STACK_SIZE_WARNING:
-            print("    [bold yellow]![/bold yellow] Payload size is too high to place using sections, consider switching to another method")
-
     def process(self):
         self.output = self.deduce_artifact()
         self.stack_warning()
-        self.sections_warning()
 
         shellcode = self.input.output.read()
         print(f"    [bold blue]>[/bold blue] Payload size is {len(shellcode)} bytes")
         shellcode = "".join('\\x%x' % x for x in shellcode)
 
         decoders = []
-        for link in reversed(self.links):
-            if hasattr(link, "decoder_required") and link.decoder_required:
+        for link in self.decoders:
+            if link.decoder_data:
                 decoders.append(
                     {
                         "name": link.__class__.__name__,
@@ -90,10 +88,18 @@ class cpp_dropper(Link):
                     }
                 )
 
-        stub = None
-        for link in reversed(self.links):
-            if isinstance(link, CreateThreadStub):
-                stub = link
+        # stub = None
+        # for link in reversed(self.links):
+        #     if isinstance(link, CreateThreadStub):
+        #         stub = link
+
+        definitions = []
+        code = []
+        for block in self.blocks:
+            block.input = self
+            d, c = block.process()
+            definitions.append(d)
+            code.append(c)
 
         template = self.load_template()
         self.output.write(
@@ -101,7 +107,8 @@ class cpp_dropper(Link):
                 shellcode = f"\"{shellcode}\"",
                 decoders = decoders,
                 link = self,
-                stub = stub,
+                definitions = "\n".join(definitions),
+                code = "\n".join(code),
             ).encode()
         )
 

@@ -6,7 +6,7 @@ from rich import print
 from keystone import Ks, KS_ARCH_X86, KS_MODE_32, KS_MODE_64
 
 from pcr.lib.artifact import Artifact, ArtifactType, ArtifactOS, ArtifactArch
-from pcr.lib.link import Link
+from pcr.lib.link import EncoderLink
 
 
 class WhereEnum(str, Enum):
@@ -14,7 +14,7 @@ class WhereEnum(str, Enum):
     end = "end"
 
 
-class RNDOpcodes(Link):
+class RNDOpcodes(EncoderLink):
     yaml_tag: ClassVar[str] = u"!modifier.RNDOpcodes"
     n: str
     where: WhereEnum

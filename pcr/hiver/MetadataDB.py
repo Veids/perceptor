@@ -10,7 +10,6 @@ from pydantic import FilePath, InstanceOf
 from rich import print
 
 from pcr.extractor.PExtractor import AssemblyInfoObj
-from pcr.lib.artifact import Artifact, ArtifactType, ArtifactOS, ArtifactArch
 from pcr.lib.link import Link
 from peewee import SqliteDatabase, Model, CharField, BlobField, TextField, fn
 
@@ -197,7 +196,6 @@ signature length: {len(signature_blob or [])}""")
                 "exports": json.loads(metadata.exports) if metadata.exports else None
             }
         )
-
 
     def process(self):
         database.init(self.db)

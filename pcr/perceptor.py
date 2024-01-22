@@ -21,6 +21,15 @@ from pcr.modifier.CreateThreadStub import CreateThreadStub
 from pcr.modifier.StudioRandomizer import StudioRandomizer
 from pcr.modifier.MvidInjector import MvidInjector
 from pcr.extractor.PExtractor import PExtractor
+
+from pcr.codewriter.cpp import cpp
+from pcr.codewriter.blocks.cpp.cpp_alloc import cpp_alloc
+from pcr.codewriter.blocks.cpp.cpp_alloc_remote import cpp_alloc_remote
+from pcr.codewriter.blocks.cpp.cpp_drop import cpp_drop
+from pcr.codewriter.blocks.cpp.cpp_exec_remote import cpp_exec_remote
+from pcr.codewriter.blocks.cpp.cpp_clean import cpp_clean
+from pcr.codewriter.blocks.cpp.cpp_get_proc_handle import cpp_get_proc_handle
+
 from pcr.codewriter.cpp_dropper import cpp_dropper
 from pcr.codewriter.cpp_injector import cpp_injector
 from pcr.compiler.LLVMPass import LLVMPass, LLVMPassConfig
@@ -64,6 +73,13 @@ YAML_CHAIN = [
     PExtractor,
 
     # Codewriters,
+    cpp,
+    cpp_alloc,
+    cpp_alloc_remote,
+    cpp_drop,
+    cpp_exec_remote,
+    cpp_clean,
+    cpp_get_proc_handle,
     cpp_dropper,
     cpp_injector,
 

