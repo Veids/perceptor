@@ -64,4 +64,5 @@ class Chain(BaseModel, YamlFuck):
                 print("    [bold blue]>[/bold blue] Converting...")
             else:
                 print(f"    [bold blue]>[/bold blue] Input link id is {link.input.id}")
+            link.preprocess()
             link.process()

@@ -4,7 +4,7 @@ import xmltodict
 from enum import Enum
 from rich import print
 from typing import ClassVar
-from pydantic import FilePath
+from pydantic import FilePath, BaseModel
 from wand.image import Image
 
 from pcr.lib.artifact import Artifact, ArtifactType, ArtifactOS, ArtifactArch
@@ -16,6 +16,17 @@ class EntityEnum(str, Enum):
     manifest = "manifest"
     version = "version"
     exports = "exports"
+
+
+class AssemblyInfoObj(BaseModel):
+    Title: str
+    Description: str
+    Company: str
+    Product: str
+    Copyright: str
+    Version: str
+    FileVersion: str
+    OriginalFilename: str
 
 
 class PExtractor(Link):
@@ -49,16 +60,18 @@ class PExtractor(Link):
 
     def get_assembly_info_lief(self, target):
         ai = target.resources_manager.version.string_file_info.langcode_items[0].items
-        assemblyInfo = {
-            "Title": ai.get("ProductName", b"").decode(),
-            "Description": ai.get("Comments", b"").decode(),
-            "Company": ai.get("CompanyName", b"").decode(),
-            "Product": ai.get("ProductName", b"").decode(),
-            "Copyright": ai.get("LegalCopyright", b"").decode(),
-            "Version": ai.get("ProductVersion", b"").decode(),
-            "FileVersion": ai.get("FileVersion", b"").decode(),
-            "OriginalFilename": ai["OriginalFilename"].decode()
-        }
+        assemblyInfo = AssemblyInfoObj(
+            **{
+                "Title": ai.get("ProductName", b"").decode(),
+                "Description": ai.get("Comments", b"").decode(),
+                "Company": ai.get("CompanyName", b"").decode(),
+                "Product": ai.get("ProductName", b"").decode(),
+                "Copyright": ai.get("LegalCopyright", b"").decode(),
+                "Version": ai.get("ProductVersion", b"").decode(),
+                "FileVersion": ai.get("FileVersion", b"").decode(),
+                "OriginalFilename": ai["OriginalFilename"].decode()
+            }
+        )
         return assemblyInfo
 
     def get_assembly_info_cecil(self):

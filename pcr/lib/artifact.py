@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, TypeVar, Generic
 from pydantic import BaseModel
 from pathlib import Path
 from enum import Enum
@@ -8,6 +8,7 @@ class ArtifactType(str, Enum):
     RAW = "raw"
     CPP = "cpp"
     PE = "pe"
+    PE_CSHARP = "pe_csharp"
     LIBRARY = "library"
     DIRECTORY = "directory"
     UNKNOWN = "unknown"

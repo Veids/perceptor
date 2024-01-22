@@ -1,6 +1,6 @@
 import shutil
 
-from typing import ClassVar
+from typing import ClassVar, Optional
 from pydantic import FilePath
 from enum import Enum
 
@@ -16,7 +16,7 @@ class ActionEnum(str, Enum):
 
 class SigThief(Link):
     yaml_tag: ClassVar[str] = u"!signer.SigThief"
-    target: FilePath | Obj
+    target: Optional[FilePath | bytes | Obj]
     action: ActionEnum
 
     def deduce_artifact(self) -> Artifact:
@@ -32,15 +32,15 @@ class SigThief(Link):
         self.output = self.deduce_artifact()
 
         if self.action == ActionEnum.write:
-            if isinstance(self.target, Obj):
-                if self.target.is_none():
-                    if self.do_raise:
-                        raise ValueError("There is no signature to append")
-                    else:
-                        print("No signature was appended")
-                        shutil.copy(self.input.output.path, self.output.path)
-                        return
-                cert = bytes(self.target)
+            if self.target is None:
+                if self.do_raise:
+                    raise ValueError("There is no signature to append")
+                else:
+                    print("No signature was appended")
+                    shutil.copy(self.input.output.path, self.output.path)
+                    return
+            elif isinstance(self.target, bytes):
+                cert = self.target
             else:
                 cert = copyCert(str(self.target))
             writeCert(cert, self.input.output.path, self.output.path)

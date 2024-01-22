@@ -116,7 +116,7 @@ class StudioRandomizer(Link):
     yaml_tag: ClassVar[str] = u"!modifier.StudioRandomizer"
     entities: List[EntityEnum]
     target_project: str
-    assemblyInfo: Optional[Obj | dict] = None
+    filename: Optional[Obj | str] = None
     assemblyAttributes: Optional[Obj | dict] = None
 
     def verify_args(self):
@@ -193,8 +193,8 @@ class StudioRandomizer(Link):
             file.write_text(text)
 
     def randomize_file_name(self, csproj, name):
-        if self.assemblyInfo:
-            name = self.assemblyInfo["OriginalFilename"].replace('.exe', '')
+        if self.filename:
+            name = self.filename.replace('.exe', '')
 
         text = csproj.read_text()
         pattern = '(<AssemblyName>.*</AssemblyName>)'

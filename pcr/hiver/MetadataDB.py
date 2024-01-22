@@ -1,13 +1,15 @@
 import zlib
 import json
 import hashlib
+import pydantic
 
 from pathlib import Path
 from enum import Enum
-from typing import ClassVar, Optional
+from typing import ClassVar, Optional, List
 from pydantic import FilePath, InstanceOf
 from rich import print
 
+from pcr.extractor.PExtractor import AssemblyInfoObj
 from pcr.lib.artifact import Artifact, ArtifactType, ArtifactOS, ArtifactArch
 from pcr.lib.link import Link
 from peewee import SqliteDatabase, Model, CharField, BlobField, TextField, fn
@@ -47,6 +49,20 @@ class PeTypeEnum(str, Enum):
     net_dll = "net_dll"
 
 
+class MetadataObj(pydantic.BaseModel):
+    hash: str
+    icon: Optional[bytes] = None
+    version: Optional[bytes] = None
+    version_directory_config: Optional[dict] = None
+    manifest: Optional[bytes] = None
+    manifest_directory_config: Optional[dict] = None
+    signature: Optional[bytes] = None
+    assemblyInfo: AssemblyInfoObj
+    assemblyAttributes: Optional[dict] = None
+    originalFilename: str
+    exports: Optional[List[str]] = None
+
+
 class MetadataDB(Link):
     yaml_tag: ClassVar[str] = u"!hiver.MetadataDB"
     db: Path
@@ -60,6 +76,7 @@ class MetadataDB(Link):
 
     name: Optional[str] = None
     pe_type: Optional[PeTypeEnum] = PeTypeEnum.etc
+    obj: Optional[MetadataObj] = None
 
     def store(self):
         hash = hashlib.md5()
@@ -165,12 +182,8 @@ icon size: {len(icon_blob or [])}
 manifest length: {len(metadata.manifest or [])}
 signature length: {len(signature_blob or [])}""")
 
-        self.output = Artifact(
-            type = ArtifactType.UNKNOWN,
-            os = ArtifactOS.UNKNOWN,
-            arch = ArtifactArch.UNKNOWN,
-            path = None,
-            obj = {
+        self.obj = MetadataObj(
+            **{
                 "hash": metadata.hash,
                 "icon": icon_blob,
                 "version": metadata.version,
@@ -184,6 +197,7 @@ signature length: {len(signature_blob or [])}""")
                 "exports": json.loads(metadata.exports) if metadata.exports else None
             }
         )
+
 
     def process(self):
         database.init(self.db)

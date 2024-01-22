@@ -10,8 +10,9 @@ from pcr.lib.link import Link, Obj
 
 class ResourceCarver(Link):
     yaml_tag: ClassVar[str] = u"!modifier.ResourceCarver"
-    version: Optional[FilePath | Obj] = None
-    version_directory_config: Optional[Any | Obj] = None
+    version: Optional[Obj] = None
+    version_directory_config: Optional[dict | Obj] = None
+    icon: Optional[FilePath | Obj] = None
 
     def verify_args(self):
         if self.input.output.type != ArtifactType.PE:
@@ -34,7 +35,7 @@ class ResourceCarver(Link):
             version_node = next(iter(filter(lambda e: e.id == lief.PE.RESOURCE_TYPES.VERSION.value, input_binary.resources.childs)))
             id_node = version_node.childs[0]
             lang_node = id_node.childs[0]
-            lang_node.content = memoryview(bytes(self.version))
+            lang_node.content = memoryview(self.version)
         else:
             version_node = lief.PE.ResourceDirectory()
             version_node.id = lief.PE.RESOURCE_TYPES.VERSION.value
@@ -45,7 +46,7 @@ class ResourceCarver(Link):
             lang_node = lief.PE.ResourceData()
             lang_node.id = 1033
             lang_node.code_page = 1252
-            lang_node.content = memoryview(bytes(self.version))
+            lang_node.content = memoryview(self.version)
 
             id_node.add_data_node(lang_node)
             version_node.add_directory_node(id_node)
@@ -53,18 +54,19 @@ class ResourceCarver(Link):
             input_binary.resources.add_directory_node(version_node)
 
         if self.version_directory_config:
-            if isinstance(self.version_directory_config, Obj):
-                config = dict(self.version_directory_config.items())
-            else:
-                config = self.version_directory_config
-
-            lang_node.code_page = config["code_page"]
-            version_node.major_version = config["directory_node"]["major_version"]
-            version_node.minor_version = config["directory_node"]["minor_version"]
-            id_node.major_version = config["id_node"]["major_version"]
-            id_node.minor_version = config["id_node"]["minor_version"]
+            lang_node.code_page = self.version_directory_config["code_page"]
+            version_node.major_version = self.version_directory_config["directory_node"]["major_version"]
+            version_node.minor_version = self.version_directory_config["directory_node"]["minor_version"]
+            id_node.major_version = self.version_directory_config["id_node"]["major_version"]
+            id_node.minor_version = self.version_directory_config["id_node"]["minor_version"]
 
         print(f"    [bold blue]>[/bold blue] Carved version:\n{input_binary.resources_manager.version}")
+
+    def carve_icon(self, input_binary):
+        if not self.icon:
+            pass
+
+        print(f"    [bold blue]>[/bold blue] Carved icon")
 
     def process(self):
         self.verify_args()
@@ -75,6 +77,7 @@ class ResourceCarver(Link):
             raise ValueError("Input binary doesn't have resource section")
 
         self.carve_version_info(input_binary)
+        self.carve_icon(input_binary)
 
         builder = lief.PE.Builder(input_binary)
         builder.build_resources(True)

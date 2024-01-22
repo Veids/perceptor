@@ -17,9 +17,9 @@ from pcr.lib.artifact import Artifact
 
 class CarbonCopy(Link):
     yaml_tag: ClassVar[str] = u"!signer.CarbonCopy"
-    url_description: AnyHttpUrl
+    url_description: AnyHttpUrl | Obj
     description: str | Obj
-    timestamp_url: AnyHttpUrl
+    timestamp_url: AnyHttpUrl | Obj
     host: str
     port: int
 
@@ -99,7 +99,7 @@ class CarbonCopy(Link):
             print("[+] Platform is Linux OS...")
             print("[+] Signing %s with %s using osslsigncode..." % (signee, PFXFILE))
             args = ("osslsigncode", "sign", "-pkcs12", str(PFXFILE),
-                    "-n", str(self.description), "-i", str(self.url_description), "-ts", str(self.timestamp_url),
+                    "-n", self.description, "-i", str(self.url_description), "-ts", str(self.timestamp_url),
                     "-in", signee, "-out", signed)
             print("[+] ", end='', flush=True)
             subprocess.check_call(args)

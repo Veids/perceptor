@@ -31,7 +31,7 @@ class MvidInjector(Link):
         import System
 
         target = Mono.Cecil.ModuleDefinition.ReadModule(str(self.input.output.path))
-        target.Mvid = System.Guid(str(self.mvid))
+        target.Mvid = System.Guid(self.mvid)
         target.Write(str(self.output.path))
 
     def info(self) -> str:

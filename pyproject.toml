@@ -29,7 +29,7 @@ ruamel-yaml = "^0.17.32"
 pydantic = "^2.1.1"
 xmltodict = "^0.13.0"
 peewee = "^3.16.3"
-faker = "^19.6.2"
+faker = "^19.13.0"
 pythonnet = "^3.0.2"
 
 [tool.poetry.group.dev.dependencies]

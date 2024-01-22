@@ -35,7 +35,7 @@ class LLVMPass(Link):
     passes: str
     dll: Optional[bool] = False
     exports: Optional[Obj] = None
-    out_name: Optional[Obj] = None
+    out_name: Optional[str | Obj] = None
     files: Optional[FilesEnum | List[Path]] = None
     cpp: bool = True
 
@@ -47,7 +47,7 @@ class LLVMPass(Link):
             extension = "dll"
         out_name = f"stage.{self.id}.{extension}"
         if self.out_name:
-            out_name = str(self.out_name)
+            out_name = self.out_name
 
         return Artifact(
             type = ArtifactType.PE,
@@ -267,12 +267,11 @@ END
             self.resources.append(manifest_res_path)
 
     def generate_exports(self):
-        if self.exports is None or self.exports.is_none():
+        if self.exports is None:
             return
 
-        exports = self.exports.item()
         filtered = ["DllMain"]
-        exports = list(filter(lambda x: x not in filtered, exports))
+        exports = list(filter(lambda x: x not in filtered, self.exports))
 
         text = ""
         for export in exports:

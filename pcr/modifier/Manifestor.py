@@ -45,15 +45,10 @@ class Manifestor(Link):
 
     def process(self):
         self.output = self.deduce_artifact()
-        if not self.manifest:
+        if self.manifest is None:
             document = parse(str(self.input.output.path))
         else:
-            if self.manifest.is_none():
-                if self.do_raise:
-                    raise ValueError("There's no manifest to process")
-                return
-
-            document = parseString(bytes(self.manifest).decode().removeprefix("\\xef\\xbb\\xbf"))
+            document = parseString(self.manifest.decode().removeprefix("\\xef\\xbb\\xbf"))
         document = document.childNodes[0]
 
         if self.keep is not None:
