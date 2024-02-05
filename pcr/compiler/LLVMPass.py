@@ -38,6 +38,7 @@ class LLVMPass(Link):
     out_name: Optional[str | Obj] = None
     files: Optional[FilesEnum | List[Path]] = None
     cpp: bool = True
+    direct_compilation: bool = False
 
     sources: Optional[List[str]] = None
 
@@ -91,6 +92,14 @@ class LLVMPass(Link):
         return [
             "-S",
             "-emit-llvm"
+        ]
+
+    def direct_pass_args(self):
+        plugin_path = str(self.config["compiler"]["LLVMPass"].plugin)
+        return [
+            "-Xclang", f"-fpass-plugin={plugin_path}",
+            "-Xclang", "-load", "-Xclang", plugin_path,
+            "-mllvm", f"--pass-order='{self.passes}'"
         ]
 
     @staticmethod
@@ -336,14 +345,36 @@ END
                 for file in self.files:
                     self.sources.append(str(self.input.output.path / file))
 
+    def clang_compile_direct(self):
+        clang_cmd = [
+            str(self.get_compiler())
+        ]
+
+        clang_cmd += self.sources
+        clang_cmd += self.direct_pass_args()
+        clang_cmd += self.clang_args()
+        clang_cmd += self.dll_args()
+        clang_cmd += self.resources
+        clang_cmd += ["-o", f"{self.output.path}"]
+        clang_cmd = " ".join(clang_cmd)
+
+        rprint("    [bold green]>[/bold green] Compiling...")
+        rprint(f"    [bold green]>[/bold green] {clang_cmd}")
+
+        stdout = LLVMPass.subprocess_wrap(clang_cmd, stderr = subprocess.STDOUT, shell =True)
+        print(stdout.decode())
+
     def process(self):
         self.output = self.deduce_artifact()
         self.preprocess()
-        self.generate_llvm_ir()
-        self.link()
-        self.opt_pass()
         self.generate_resources()
-        self.clang_compile()
+        if self.direct_compilation:
+            self.clang_compile_direct()
+        else:
+            self.generate_llvm_ir()
+            self.link()
+            self.opt_pass()
+            self.clang_compile()
 
     def info(self) -> str:
         return "Compile project"

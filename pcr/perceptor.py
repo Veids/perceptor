@@ -29,9 +29,8 @@ from pcr.codewriter.blocks.cpp.cpp_drop import cpp_drop
 from pcr.codewriter.blocks.cpp.cpp_exec_remote import cpp_exec_remote
 from pcr.codewriter.blocks.cpp.cpp_clean import cpp_clean
 from pcr.codewriter.blocks.cpp.cpp_get_proc_handle import cpp_get_proc_handle
+from pcr.codewriter.blocks.cpp.cpp_delay import cpp_delay
 
-from pcr.codewriter.cpp_dropper import cpp_dropper
-from pcr.codewriter.cpp_injector import cpp_injector
 from pcr.compiler.LLVMPass import LLVMPass, LLVMPassConfig
 from pcr.signer.CarbonCopy import CarbonCopy
 from pcr.signer.SigThief import SigThief
@@ -79,9 +78,8 @@ YAML_CHAIN = [
     cpp_drop,
     cpp_exec_remote,
     cpp_clean,
+    cpp_delay,
     cpp_get_proc_handle,
-    cpp_dropper,
-    cpp_injector,
 
     # Compilers
     LLVMPass,

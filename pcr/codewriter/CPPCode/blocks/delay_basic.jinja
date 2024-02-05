@@ -1,0 +1,8 @@
+{% from "macros.jinja" import function_typedef, function_definition, createThreadStub with context %}
+
+{% if section == "globals" %}
+    {{ function_typedef("Sleep") }}
+{% else %}
+    {{ function_definition("Sleep") }}
+    pSleep({{ seconds }});
+{% endif %}
