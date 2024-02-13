@@ -11,6 +11,7 @@ from pcr.lib.chain import Chain
 from pcr.lib.link import Stdin, Obj, args_constructor, env_constructor, flatten_constructor
 
 # Link imports are here
+from pcr.lib.misc_links import Command
 from pcr.converter.Donut import Donut, DonutConfig
 from pcr.modifier.XOREncode import XOREncode
 from pcr.modifier.RNDOpcodes import RNDOpcodes
@@ -54,6 +55,9 @@ YAML_CHAIN = [
     Chain,
     Stdin,
     Obj,
+
+    # Misc
+    Command,
 
     # Converters
     Donut,

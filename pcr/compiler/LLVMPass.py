@@ -162,7 +162,7 @@ class LLVMPass(Link):
         rprint("    [bold green]>[/bold green] Running passes on the obtained LLVM IR")
         rprint(f"    [bold green]>[/bold green] {opt_cmd}")
 
-        stdout = LLVMPass.subprocess_wrap(opt_cmd, stderr = subprocess.STDOUT, shell=True)
+        stdout = LLVMPass.subprocess_wrap(opt_cmd, stderr = subprocess.STDOUT, shell = True)
         print(stdout.decode())
 
     def build_resource(self, input, output):
@@ -177,7 +177,7 @@ class LLVMPass(Link):
         ]
         windres_cmd = " ".join(windres_cmd)
         rprint(f"    [bold green]>[/bold green] {windres_cmd}")
-        return LLVMPass.subprocess_wrap(windres_cmd, stderr = subprocess.STDOUT, shell=True)
+        return LLVMPass.subprocess_wrap(windres_cmd, stderr = subprocess.STDOUT, shell = True)
 
     def generate_icon(self):
         if self.icon is not None:

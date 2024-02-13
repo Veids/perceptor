@@ -10,14 +10,34 @@ class ArtifactType(str, Enum):
     PE = "pe"
     PE_CSHARP = "pe_csharp"
     LIBRARY = "library"
+    OBJECT = "object"
     DIRECTORY = "directory"
     UNKNOWN = "unknown"
+
+    def get_extension(self):
+        match self:
+            case ArtifactType.RAW:
+                return "bin"
+            case ArtifactType.CPP:
+                return "cpp"
+            case ArtifactType.PE | ArtifactType.PE_CSHARP:
+                return "exe"
+            case ArtifactType.OBJECT:
+                return "o"
+        return ""
 
 
 class ArtifactOS(str, Enum):
     LINUX = "linux"
     WINDOWS = "windows"
     UNKNOWN = "unknown"
+
+    def get_library_extension(self):
+        if self == ArtifactOS.LINUX:
+            return "so"
+        elif self == ArtifactOS.WINDOWS:
+            return "dll"
+        return ""
 
 
 class ArtifactArch(str, Enum):
