@@ -14,6 +14,7 @@ from pcr.lib.artifact import Artifact, ArtifactType
 
 class LLVMPassConfig(BaseModel, YamlFuck):
     yaml_tag: ClassVar[str] = u"!compiler.LLVMPassConfig"
+    assembler: FilePath
     clang: FilePath
     clangpp: FilePath
     windres: Optional[FilePath]

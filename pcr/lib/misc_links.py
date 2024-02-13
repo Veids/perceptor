@@ -6,6 +6,7 @@ from typing_extensions import TypedDict
 
 from pcr.lib.artifact import Artifact, ArtifactType, ArtifactOS, ArtifactArch
 from pcr.lib.link import Link
+from pcr.codewriter.codelib import CodeLib
 
 
 class OutputConfig(TypedDict):
@@ -39,7 +40,8 @@ class Command(Link):
         cmd = self.cmd.format(
             name = self.name,
             output_path = self.output.path,
-            config = self.config
+            config = self.config,
+            codelib = CodeLib()
         )
 
         print(f"    [bold blue]>[/bold blue] Running command: {cmd}")
