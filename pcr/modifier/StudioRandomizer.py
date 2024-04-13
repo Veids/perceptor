@@ -107,6 +107,13 @@ WELL_KNOWN_GUIDS = {
 }
 
 
+def genAssemblyInfo(name, info):
+    return f"[assembly: Assembly{name}(\"{info}\")]"
+
+def genCsprojAssemblyInfo(name, info):
+    return f"<{name}>{info}</{name}>"
+
+
 class EntityEnum(str, Enum):
     guid = "guid"
     assemblyInfo = "assemblyInfo"
@@ -206,9 +213,87 @@ class StudioRandomizer(Link):
         print()
         csproj.write_text(text)
 
+    def generate_random_assembly_info(self, genInfo):
+        company = fake.company()
+        title = company.split(' ')[0].split('-')[0].removesuffix(',')
+        copyright = f"Copyright © {company} {random.randint(2015, 2023)}"
+        version = f"{random.randint(0,9)}.{random.randint(0,9)}.{random.randint(0,9)}.{random.randint(0,9)}"
+
+        assemblyInfo = {
+            "Title": genInfo("Title", title),
+            "Description": genInfo("Description", ""),
+            "Configuration": genInfo("Configuration", ""),
+            "Company": genInfo("Company", company),
+            "Product": genInfo("Product", title),
+            "Copyright": genInfo("Copyright", copyright),
+            "Trademark": genInfo("Trademark", ""),
+            "Culture": genInfo("Culture", ""),
+            "Version": genInfo("Version", version),
+            "FileVersion": genInfo("FileVersion", version)
+        }
+        return assemblyInfo, title
+
+    def regex_replace(self, assemblyReplacements, text):
+        for _, (pattern, replacement) in assemblyReplacements.items():
+            for match in re.findall(pattern, text):
+                print(f"            {escape(match)} -> {escape(replacement)}")
+                text = text.replace(match, replacement)
+
+        return text
+
+    def mutate_assembly_info(self, file, main_project_path):
+        print(f"        File {file.absolute()}:")
+        text = file.read_text()
+
+        assemblyInfo, title = self.generate_random_assembly_info(genAssemblyInfo)
+
+        if main_project_path:
+            if str(file).startswith(str(main_project_path.parent)):
+                if self.assemblyAttributes:
+                    for k in assemblyInfo.keys():
+                        assemblyInfo[k] = genAssemblyInfo(k, self.assemblyAttributes.get(k, ""))
+                self.randomize_file_name(main_project_path, title)
+
+        def genRepl(name):
+            return (rf'\[assembly: Assembly{name}\(".*"\)\]', assemblyInfo[name])
+
+        assemblyReplacements = {}
+        for key in assemblyInfo.keys():
+            assemblyReplacements[key] = genRepl(key)
+
+        assemblyReplacements["Version"] = r'\[assembly: AssemblyVersion\("[\d\.]*"\)\]', assemblyInfo["Version"]
+        assemblyReplacements["FileVersion"] = r'\[assembly: AssemblyFileVersion\("[\d\.]*"\)\]', assemblyInfo["FileVersion"]
+
+        self.regex_replace(assemblyReplacements, text)
+        file.write_text(text)
+
+    def mutate_csproj(self, file):
+        print("    [bold blue]>[/bold blue] AssemblyInfo was not found in the solution, trying to mutate csproj")
+        assemblyInfo, _ = self.generate_random_assembly_info(genCsprojAssemblyInfo)
+        text = file.read_text()
+
+        if self.assemblyAttributes:
+            for k in assemblyInfo.keys():
+                assemblyInfo[k] = genCsprojAssemblyInfo(k, self.assemblyAttributes.get(k, ""))
+
+        def genRepl(name):
+            return (rf'<{name}>.*</{name}>', assemblyInfo[name])
+
+        assemblyReplacements = {}
+        for key in assemblyInfo.keys():
+            assemblyReplacements[key] = genRepl(key)
+
+        assemblyReplacements["Version"] = r'\[assembly: AssemblyVersion\("[\d\.]*"\)\]', assemblyInfo["Version"]
+        assemblyReplacements["FileVersion"] = r'\[assembly: AssemblyFileVersion\("[\d\.]*"\)\]', assemblyInfo["FileVersion"]
+
+        self.regex_replace(assemblyReplacements, text)
+        file.write_text(text)
+
+
     def randomize_assembly_info(self):
         files = list(self.output.path.rglob("AssemblyInfo.cs"))
         projects_path = self.get_projects_path()
+        main_project_path = None
 
         if self.target_project:
             for sln, projects in projects_path.items():
@@ -226,54 +311,11 @@ class StudioRandomizer(Link):
                 title = company.split(' ')[0].split('-')[0].removesuffix(',')
                 self.randomize_file_name(main_project_path, title)
 
-        for file in files:
-            print(f"        File {file.absolute()}:")
-            text = file.read_text()
-
-            company = fake.company()
-            title = company.split(' ')[0].split('-')[0].removesuffix(',')
-            copyright = f"Copyright © {company} {random.randint(2015, 2023)}"
-            version = f"{random.randint(0,9)}.{random.randint(0,9)}.{random.randint(0,9)}.{random.randint(0,9)}"
-
-            def genInfo(name, info):
-                return f"[assembly: Assembly{name}(\"{info}\")]"
-
-            assemblyInfo = {
-                "Title": genInfo("Title", title),
-                "Description": genInfo("Description", ""),
-                "Configuration": genInfo("Configuration", ""),
-                "Company": genInfo("Company", company),
-                "Product": genInfo("Product", title),
-                "Copyright": genInfo("Copyright", copyright),
-                "Trademark": genInfo("Trademark", ""),
-                "Culture": genInfo("Culture", ""),
-                "Version": genInfo("Version", version),
-                "FileVersion": genInfo("FileVersion", version)
-            }
-
-            if main_project_path:
-                if str(file).startswith(str(main_project_path.parent)):
-                    if self.assemblyAttributes:
-                        for k in assemblyInfo.keys():
-                            assemblyInfo[k] = genInfo(k, self.assemblyAttributes.get(k, ""))
-                    self.randomize_file_name(main_project_path, title)
-
-            def genRepl(name):
-                return (rf'\[assembly: Assembly{name}\(".*"\)\]', assemblyInfo[name])
-
-            assemblyReplacements = {}
-            for key in assemblyInfo.keys():
-                assemblyReplacements[key] = genRepl(key)
-
-            assemblyReplacements["Version"] = r'\[assembly: AssemblyVersion\("[\d\.]*"\)\]', assemblyInfo["Version"]
-            assemblyReplacements["FileVersion"] = r'\[assembly: AssemblyFileVersion\("[\d\.]*"\)\]', assemblyInfo["FileVersion"]
-
-            for _, (pattern, replacement) in assemblyReplacements.items():
-                for match in re.findall(pattern, text):
-                    print(f"            {escape(match)} -> {escape(replacement)}")
-                    text = text.replace(match, replacement)
-
-            file.write_text(text)
+        if len(files):
+            for file in files:
+                self.mutate_assembly_info(file, main_project_path)
+        else:
+            self.mutate_csproj(main_project_path)
 
     def process(self):
         self.output = self.deduce_artifact()
