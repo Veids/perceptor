@@ -31,7 +31,6 @@ xmltodict = "^0.13.0"
 peewee = "^3.16.3"
 faker = "^19.13.0"
 pythonnet = "^3.0.2"
-coffipy = {git = "https://github.com/Veids/COFFI.git", rev = "coffipy"}
 
 [tool.poetry.group.dev.dependencies]
 ipython = "^8.14.0"

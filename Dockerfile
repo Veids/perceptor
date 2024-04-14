@@ -1,4 +1,4 @@
-FROM silkeh/clang:16 AS base
+FROM silkeh/clang:17 AS base
 WORKDIR /app
 
 FROM base as ssage
@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN git clone --single-branch --branch dev https://github.com/Veids/SsagePass.git
 RUN cd SsagePass/Obfuscation && \
-    cmake -S . -B build -DLT_LLVM_INSTALL_DIR=/usr/lib/llvm-16 -DCMAKE_BUILD_TYPE=release && \
+    cmake -S . -B build -DLT_LLVM_INSTALL_DIR=/usr/lib/llvm-17 -DCMAKE_BUILD_TYPE=release && \
     cmake --build build -j $(nproc)
 
 FROM python:3.11-slim-bookworm as perceptor
@@ -27,6 +27,7 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
     POETRY_VERSION=1.6.1
 
 RUN apt-get update && apt-get install -y \
+  git \
   gcc \
   make \
   cmake \
@@ -36,7 +37,7 @@ RUN pip install "poetry==$POETRY_VERSION"
 RUN python -m venv /venv
 
 COPY pyproject.toml poetry.lock ./
-RUN poetry export -f requirements.txt | /venv/bin/pip install -r /dev/stdin
+RUN poetry export --without-hashes -f requirements.txt | /venv/bin/pip install -r /dev/stdin
 
 COPY . .
 RUN poetry build && /venv/bin/pip install dist/*.whl
