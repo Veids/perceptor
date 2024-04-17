@@ -23,7 +23,7 @@ class Link(BaseModel, YamlFuck, ABC):
     do_raise: Optional[bool] = False
 
     @abstractmethod
-    def process(self, links):
+    def process(self):
         pass
 
     @abstractmethod

@@ -127,21 +127,6 @@ files = [
 cffi = ">=1.13"
 
 [[package]]
-name = "coffipy"
-version = "1.2"
-description = "A header-only C++ library for accessing files in COFF binary format. (Including Windows PE/PE+ formats)"
-optional = false
-python-versions = ">=3.7"
-files = []
-develop = false
-
-[package.source]
-type = "git"
-url = "https://github.com/Veids/COFFI.git"
-reference = "coffipy"
-resolved_reference = "a2785b7426fc91dfa9494544e1c9e16bbeab7cc0"
-
-[[package]]
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
@@ -535,13 +520,13 @@ files = [
 
 [[package]]
 name = "matplotlib-inline"
-version = "0.1.6"
+version = "0.1.7"
 description = "Inline Matplotlib backend for Jupyter"
 optional = false
-python-versions = ">=3.5"
+python-versions = ">=3.8"
 files = [
-    {file = "matplotlib-inline-0.1.6.tar.gz", hash = "sha256:f887e5f10ba98e8d2b150ddcf4702c1e5f8b3a20005eb0f74bfdbd360ee6f304"},
-    {file = "matplotlib_inline-0.1.6-py3-none-any.whl", hash = "sha256:f1f41aab5328aa5aaea9b16d083b128102f8712542f819fe7e6a420ff581b311"},
+    {file = "matplotlib_inline-0.1.7-py3-none-any.whl", hash = "sha256:df192d39a4ff8f21b1895d72e6a13f5fcc5099f00fa84384e0ea28c2cc0653ca"},
+    {file = "matplotlib_inline-0.1.7.tar.gz", hash = "sha256:8423b23ec666be3d16e16b60bdd8ac4e86e840ebd1dd11a30b9f117f2fa0ab90"},
 ]
 
 [package.dependencies]
@@ -586,12 +571,12 @@ testing = ["docopt", "pytest"]
 
 [[package]]
 name = "peewee"
-version = "3.17.1"
+version = "3.17.3"
 description = "a little orm"
 optional = false
 python-versions = "*"
 files = [
-    {file = "peewee-3.17.1.tar.gz", hash = "sha256:e009ac4227c4fdc0058a56e822ad5987684f0a1fbb20fed577200785102581c3"},
+    {file = "peewee-3.17.3.tar.gz", hash = "sha256:ef15f90b628e41a584be8306cdc3243c51f73ce88b06154d9572f6d0284a0169"},
 ]
 
 [[package]]
@@ -1186,4 +1171,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "c8e87c22bdc5b64193c03aa905aeb4c4466e8c7fa94635dc8878c48e731e3697"
+content-hash = "6b9f2f833dda2ffafe52fcc2cee2338fd78f20ae7452d15b2aa7cfb96b0e2e6f"

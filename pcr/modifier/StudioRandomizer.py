@@ -1,3 +1,4 @@
+from pathlib import Path
 import re
 import uuid
 import shutil
@@ -6,7 +7,7 @@ import string
 from faker import Faker
 
 from enum import Enum
-from typing import ClassVar, List, Optional
+from typing import Callable, ClassVar, List, Optional
 from rich import print
 from rich.markup import escape
 
@@ -103,45 +104,59 @@ WELL_KNOWN_GUIDS = {
     "f5b4f3bc-b597-4e2b-b552-ef5d8a32436f",
     "f85e285d-a4e0-4152-9332-ab1d724d3325",
     "f8810ec1-6754-47fc-a15f-dfabd2e3fa90",
-    "fae04ec0-301f-11d3-bf4b-00c04f79efbc"
+    "fae04ec0-301f-11d3-bf4b-00c04f79efbc",
 }
 
 
 def genAssemblyInfo(name, info):
-    return f"[assembly: Assembly{name}(\"{info}\")]"
+    return f'[assembly: Assembly{name}("{info}")]'
+
 
 def genCsprojAssemblyInfo(name, info):
     return f"<{name}>{info}</{name}>"
 
 
+class StudioRandomizerException(Exception):
+    pass
+
+
 class EntityEnum(str, Enum):
     guid = "guid"
     assemblyInfo = "assemblyInfo"
+    icon = "icon"
 
 
 class StudioRandomizer(Link):
-    yaml_tag: ClassVar[str] = u"!modifier.StudioRandomizer"
+    yaml_tag: ClassVar[str] = "!modifier.StudioRandomizer"
     entities: List[EntityEnum]
     target_project: str
     filename: Optional[Obj | str] = None
     assemblyAttributes: Optional[Obj | dict] = None
+    icon: Optional[Obj | bytes] = None
 
     def verify_args(self):
         if not self.input.output.path.exists():
-            raise Exception("Input artifact directory doesn't exist")
+            raise StudioRandomizerException("Input artifact directory doesn't exist")
 
-        if self.input.output.type != ArtifactType.DIRECTORY or not self.input.output.path.is_dir():
-            raise Exception("Input artifact is not a directory")
+        if (
+            self.input.output.type != ArtifactType.DIRECTORY
+            or not self.input.output.path.is_dir()
+        ):
+            raise StudioRandomizerException("Input artifact is not a directory")
 
     def deduce_artifact(self) -> Artifact:
         return Artifact(
-            type = self.input.output.type,
-            path = self.config["main"].tmp / f"stage.{self.id}"
+            type=self.input.output.type,
+            path=self.config["main"].tmp / f"stage.{self.id}",
         )
 
     def get_guids(self):
         guid_pattern = "(?:(?:[0-9a-fA-F]){8}-(?:[0-9a-fA-F]){4}-(?:[0-9a-fA-F]){4}-(?:[0-9a-fA-F]){4}-(?:[0-9a-fA-F]){12})"
-        files = list(self.output.path.rglob("*.sln")) + list(self.output.path.rglob("*.csproj")) + list(self.output.path.rglob("AssemblyInfo.cs"))
+        files = (
+            list(self.output.path.rglob("*.sln"))
+            + list(self.output.path.rglob("*.csproj"))
+            + list(self.output.path.rglob("AssemblyInfo.cs"))
+        )
 
         guids = set()
         for file in files:
@@ -175,17 +190,23 @@ class StudioRandomizer(Link):
         return projects
 
     def randomize_guids(self):
-        files = list(self.output.path.rglob("*.sln")) + list(self.output.path.rglob("*.csproj")) + list(self.output.path.rglob("AssemblyInfo.cs"))
+        files = (
+            list(self.output.path.rglob("*.sln"))
+            + list(self.output.path.rglob("*.csproj"))
+            + list(self.output.path.rglob("AssemblyInfo.cs"))
+        )
         projects_guid = self.get_projects_guid()
 
         guids_map = {}
         for guid in projects_guid.values():
             guids_map[guid] = str(uuid.uuid4())
 
-        if self.target_project and self.assemblyAttributes:
+        if self.assemblyAttributes:
             main_project_guid = projects_guid.get(self.target_project)
             if not main_project_guid:
-                raise Exception("Couldn't determine project GUID {self.target_project} {projects_guid}")
+                raise StudioRandomizerException(
+                    "Couldn't determine project GUID {self.target_project} {projects_guid}"
+                )
 
             main_project_guid = main_project_guid.lower()
             guids_map[main_project_guid] = self.assemblyAttributes["Guid"]
@@ -200,22 +221,22 @@ class StudioRandomizer(Link):
             file.write_text(text)
 
     def randomize_file_name(self, csproj, name):
+        print(f"        File {csproj.absolute()}:")
         if self.filename:
-            name = self.filename.replace('.exe', '')
+            name = self.filename.replace(".exe", "")
 
         text = csproj.read_text()
-        pattern = '(<AssemblyName>.*</AssemblyName>)'
+        pattern = "(<AssemblyName>.*</AssemblyName>)"
 
         replacement = f"<AssemblyName>{name}</AssemblyName>"
         for match in re.findall(pattern, text):
             print(f"            {escape(match)} -> {escape(replacement)}")
             text = re.sub(match, replacement, text)
-        print()
         csproj.write_text(text)
 
     def generate_random_assembly_info(self, genInfo):
         company = fake.company()
-        title = company.split(' ')[0].split('-')[0].removesuffix(',')
+        title = company.split(" ")[0].split("-")[0].removesuffix(",")
         copyright = f"Copyright © {company} {random.randint(2015, 2023)}"
         version = f"{random.randint(0,9)}.{random.randint(0,9)}.{random.randint(0,9)}.{random.randint(0,9)}"
 
@@ -229,11 +250,11 @@ class StudioRandomizer(Link):
             "Trademark": genInfo("Trademark", ""),
             "Culture": genInfo("Culture", ""),
             "Version": genInfo("Version", version),
-            "FileVersion": genInfo("FileVersion", version)
+            "FileVersion": genInfo("FileVersion", version),
         }
         return assemblyInfo, title
 
-    def regex_replace(self, assemblyReplacements, text):
+    def _regex_replace(self, assemblyReplacements, text):
         for _, (pattern, replacement) in assemblyReplacements.items():
             for match in re.findall(pattern, text):
                 print(f"            {escape(match)} -> {escape(replacement)}")
@@ -241,18 +262,22 @@ class StudioRandomizer(Link):
 
         return text
 
-    def mutate_assembly_info(self, file, main_project_path):
-        print(f"        File {file.absolute()}:")
-        text = file.read_text()
+    def _update_assembly_info_from_user_data(
+        self, assemblyInfo, assemblyInfoGenerator: Callable
+    ):
+        if self.assemblyAttributes:
+            for k in assemblyInfo.keys():
+                assemblyInfo[k] = assemblyInfoGenerator(
+                    k, self.assemblyAttributes.get(k, "")
+                )
 
+    def mutate_assembly_info(self, file, main_project_path):
+        text = file.read_text()
         assemblyInfo, title = self.generate_random_assembly_info(genAssemblyInfo)
 
-        if main_project_path:
-            if str(file).startswith(str(main_project_path.parent)):
-                if self.assemblyAttributes:
-                    for k in assemblyInfo.keys():
-                        assemblyInfo[k] = genAssemblyInfo(k, self.assemblyAttributes.get(k, ""))
-                self.randomize_file_name(main_project_path, title)
+        if str(file).startswith(str(main_project_path.parent)):
+            self._update_assembly_info_from_user_data(assemblyInfo, genAssemblyInfo)
+            self.randomize_file_name(main_project_path, title)
 
         def genRepl(name):
             return (rf'\[assembly: Assembly{name}\(".*"\)\]', assemblyInfo[name])
@@ -261,61 +286,95 @@ class StudioRandomizer(Link):
         for key in assemblyInfo.keys():
             assemblyReplacements[key] = genRepl(key)
 
-        assemblyReplacements["Version"] = r'\[assembly: AssemblyVersion\("[\d\.]*"\)\]', assemblyInfo["Version"]
-        assemblyReplacements["FileVersion"] = r'\[assembly: AssemblyFileVersion\("[\d\.]*"\)\]', assemblyInfo["FileVersion"]
+        assemblyReplacements["Version"] = (
+            r'\[assembly: AssemblyVersion\("[\d\.]*"\)\]',
+            assemblyInfo["Version"],
+        )
+        assemblyReplacements["FileVersion"] = (
+            r'\[assembly: AssemblyFileVersion\("[\d\.]*"\)\]',
+            assemblyInfo["FileVersion"],
+        )
 
-        self.regex_replace(assemblyReplacements, text)
+        print(f"        File {file.absolute()}:")
+        text = self._regex_replace(assemblyReplacements, text)
         file.write_text(text)
 
     def mutate_csproj(self, file):
-        print("    [bold blue]>[/bold blue] AssemblyInfo was not found in the solution, trying to mutate csproj")
-        assemblyInfo, _ = self.generate_random_assembly_info(genCsprojAssemblyInfo)
         text = file.read_text()
+        assemblyInfo, _ = self.generate_random_assembly_info(genCsprojAssemblyInfo)
 
         if self.assemblyAttributes:
             for k in assemblyInfo.keys():
-                assemblyInfo[k] = genCsprojAssemblyInfo(k, self.assemblyAttributes.get(k, ""))
+                assemblyInfo[k] = genCsprojAssemblyInfo(
+                    k, self.assemblyAttributes.get(k, "")
+                )
 
         def genRepl(name):
-            return (rf'<{name}>.*</{name}>', assemblyInfo[name])
+            return (rf"<{name}>.*</{name}>", assemblyInfo[name])
 
         assemblyReplacements = {}
         for key in assemblyInfo.keys():
             assemblyReplacements[key] = genRepl(key)
 
-        assemblyReplacements["Version"] = r'\[assembly: AssemblyVersion\("[\d\.]*"\)\]', assemblyInfo["Version"]
-        assemblyReplacements["FileVersion"] = r'\[assembly: AssemblyFileVersion\("[\d\.]*"\)\]', assemblyInfo["FileVersion"]
-
-        self.regex_replace(assemblyReplacements, text)
+        text = self._regex_replace(assemblyReplacements, text)
         file.write_text(text)
 
+    def deduce_main_project_path(self, projects_path) -> Path:
+        for sln, projects in projects_path.items():
+            if main_project_path := projects.get(self.target_project):
+                main_project_path = main_project_path.replace("\\", "/")
+                main_project_path = sln.parent / main_project_path
+                return main_project_path
+
+        raise StudioRandomizerException(
+            "Couldn't determine project path {self.target_project} {main_project_path}"
+        )
 
     def randomize_assembly_info(self):
         files = list(self.output.path.rglob("AssemblyInfo.cs"))
         projects_path = self.get_projects_path()
-        main_project_path = None
-
-        if self.target_project:
-            for sln, projects in projects_path.items():
-                if main_project_path := projects.get(self.target_project):
-                    break
-
-            if not main_project_path:
-                raise Exception("Couldn't determine project path {self.target_project} {main_project_path}")
-
-            main_project_path = main_project_path.replace('\\', '/')
-            main_project_path = sln.parent / main_project_path
-
-            if not len(files):
-                company = fake.company()
-                title = company.split(' ')[0].split('-')[0].removesuffix(',')
-                self.randomize_file_name(main_project_path, title)
+        main_project_path = self.deduce_main_project_path(projects_path)
 
         if len(files):
             for file in files:
                 self.mutate_assembly_info(file, main_project_path)
         else:
+            print(
+                "    [bold blue]>[/bold blue] AssemblyInfo.cs was not found in the solution, trying to mutate csproj"
+            )
+            company = fake.company()
+            title = company.split(" ")[0].split("-")[0].removesuffix(",")
+            self.randomize_file_name(main_project_path, title)
             self.mutate_csproj(main_project_path)
+
+    def _update_icon_csproj(self, csproj: Path, icon: bytes):
+        icon_name = uuid.uuid4().hex + ".ico"
+        icon_path = csproj.parents[0] / icon_name
+        icon_path.write_bytes(icon)
+
+        text = csproj.read_text()
+        replacements = {
+            "ApplicationIcon": ("<ApplicationIcon>.*</ApplicationIcon>", f"<ApplicationIcon>{icon_name}</ApplicationIcon>")
+        }
+        text = self._regex_replace(replacements, text)
+        csproj.write_text(text)
+
+    def _remove_icon_csproj(self, csproj: Path):
+        text = csproj.read_text()
+        replacements = {
+            "ApplicationIcon": ("<ApplicationIcon>.*</ApplicationIcon>", "")
+        }
+        text = self._regex_replace(replacements, text)
+        csproj.write_text(text)
+
+    def mutate_icon(self):
+        projects_path = self.get_projects_path()
+        main_project_path = self.deduce_main_project_path(projects_path)
+
+        if self.icon:
+            self._update_icon_csproj(main_project_path, self.icon)
+        else:
+            self._remove_icon_csproj(main_project_path)
 
     def process(self):
         self.output = self.deduce_artifact()
@@ -332,6 +391,10 @@ class StudioRandomizer(Link):
         if EntityEnum.assemblyInfo in self.entities:
             print("    [bold blue]>[/bold blue] Replacing AssemblyInfo:")
             self.randomize_assembly_info()
+
+        if EntityEnum.icon in self.entities:
+            print("    [bold blue]>[/bold blue] Handling icon...")
+            self.mutate_icon()
 
     def info(self) -> str:
         return "Randomize metadata inside studio project"
