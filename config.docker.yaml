@@ -6,8 +6,8 @@ converter:
     path: "/opt/donut"
 compiler:
   LLVMPass: !compiler.LLVMPassConfig
-    assembler: "usr/bin/x86_64-w64-mingw32-as"
+    assembler: "/usr/bin/x86_64-w64-mingw32-as"
     clang: "/usr/local/bin/x86_64-w64-mingw32-clang"
     clangpp: "/usr/local/bin/x86_64-w64-mingw32-clang++"
-    windres: "/usr/bin/llvm-windres-16"
+    windres: "/usr/bin/llvm-windres"
     plugin: "/opt/libSsageObfuscator.so"
