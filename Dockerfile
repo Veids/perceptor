@@ -75,11 +75,16 @@ COPY config.docker.yaml config.yaml
 
 RUN ln -s /usr/bin/python3 /usr/local/bin/python
 
+RUN wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && \
+  dpkg -i packages-microsoft-prod.deb && \
+  rm packages-microsoft-prod.deb
+
 RUN apt-get update && apt-get install -y \
   git \
   mingw-w64 \
   osslsigncode \
   libmono-cecil-cil \
+  dotnet-sdk-8.0 \
   && rm -rf /var/lib/apt/lists/*
 
 RUN git clone https://github.com/tpoechtrager/wclang && \
