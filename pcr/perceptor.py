@@ -8,7 +8,13 @@ from pathlib import Path
 from pcr.lib.common import MainConfig
 from pcr.lib.artifact import Artifact, ArtifactType, ArtifactOS, ArtifactArch
 from pcr.lib.chain import Chain
-from pcr.lib.link import Stdin, Obj, args_constructor, env_constructor, flatten_constructor
+from pcr.lib.link import (
+    Stdin,
+    Obj,
+    args_constructor,
+    env_constructor,
+    flatten_constructor,
+)
 
 # Link imports are here
 from pcr.lib.misc_links import Command
@@ -21,6 +27,7 @@ from pcr.modifier.Manifestor import Manifestor
 from pcr.modifier.CreateThreadStub import CreateThreadStub
 from pcr.modifier.StudioRandomizer import StudioRandomizer
 from pcr.modifier.MvidInjector import MvidInjector
+from pcr.modifier.PSCommentRemoval import PSCommentRemoval
 from pcr.extractor.PExtractor import PExtractor
 
 from pcr.codewriter.cpp import cpp
@@ -39,14 +46,67 @@ from pcr.hiver.MetadataDB import MetadataDB
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(add_help=True, description="perceptor: A python script to automatically apply several transforms to source artifact")
-    parser.add_argument("-c", '--chain', required=True, action='store', help="Chain to use in stages (yaml)")
-    parser.add_argument("-i", '--input', required=False, type=Path, default=None, action='store', help="Input file")
-    parser.add_argument("-o", '--output', required=False, type=Path, default=None, action='store', help="Output file")
-    parser.add_argument("-d", '--debug', required=False, default=False, action='store_true', help="Output file")
-    parser.add_argument("-bt", '--binary-os', required=False, choices=["windows", "linux"], action='store', help="Binary type (raw)")
-    parser.add_argument("-ba", '--binary-arch', required=False, choices=["x86", "amd64", "x86+amd64"], action='store', help="Binary arch (raw)")
-    parser.add_argument("-kt", "--keep-temp", required=False, action="store_true", default=False, help="Keep directory content (False)")
+    parser = argparse.ArgumentParser(
+        add_help=True,
+        description="perceptor: A python script to automatically apply several transforms to a source artifact",
+    )
+    parser.add_argument(
+        "-c",
+        "--chain",
+        required=True,
+        action="store",
+        help="Chain to use in stages (yaml)",
+    )
+    parser.add_argument(
+        "-i",
+        "--input",
+        required=False,
+        type=Path,
+        default=None,
+        action="store",
+        help="Input file",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        required=False,
+        type=Path,
+        default=None,
+        action="store",
+        help="Output file",
+    )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        required=False,
+        default=False,
+        action="store_true",
+        help="Output file",
+    )
+    parser.add_argument(
+        "-bt",
+        "--binary-os",
+        required=False,
+        choices=["windows", "linux"],
+        action="store",
+        help="Binary type (raw)",
+    )
+    parser.add_argument(
+        "-ba",
+        "--binary-arch",
+        required=False,
+        choices=["x86", "amd64", "x86+amd64"],
+        action="store",
+        help="Binary arch (raw)",
+    )
+    parser.add_argument(
+        "-kt",
+        "--keep-temp",
+        required=False,
+        action="store_true",
+        default=False,
+        help="Keep directory content (False)",
+    )
     return parser.parse_known_args()
 
 
@@ -71,6 +131,7 @@ YAML_CHAIN = [
     CreateThreadStub,
     StudioRandomizer,
     MvidInjector,
+    PSCommentRemoval,
 
     # Extractors
     PExtractor,
@@ -98,14 +159,12 @@ YAML_CHAIN = [
 
 YAML_CONFIG = [
     MainConfig,
-
     DonutConfig,
-
     LLVMPassConfig,
 ]
 
 
-def get_yaml(classes, constructors = None):
+def get_yaml(classes, constructors=None):
     yaml = YAML()
     yaml.indent(mapping=2, sequence=4, offset=2)
 
@@ -123,7 +182,7 @@ def load_chain(args, unknown):
     constructors = {
         "!args": args_constructor(unknown),
         "!env": env_constructor,
-        "!flatten": flatten_constructor
+        "!flatten": flatten_constructor,
     }
 
     yaml = get_yaml(YAML_CHAIN, constructors)
@@ -136,10 +195,7 @@ def load_input(args):
         return None
 
     if args.input.is_dir():
-        return Artifact(
-            type = ArtifactType.DIRECTORY,
-            path = args.input
-        )
+        return Artifact(type=ArtifactType.DIRECTORY, path=args.input)
 
     lb = None
     with open(args.input, "rb") as f:
@@ -157,19 +213,15 @@ def load_input(args):
             arch = ArtifactArch.X86
 
         return Artifact(
-            type = atype,
-            os = ArtifactOS.WINDOWS,
-            arch = arch,
-            path = args.input,
-            obj = lb
+            type=atype, os=ArtifactOS.WINDOWS, arch=arch, path=args.input, obj=lb
         )
     else:
         return Artifact(
-            type = ArtifactType.RAW,
-            os = args.binary_os or ArtifactOS.UNKNOWN,
-            arch = args.binary_arch or ArtifactArch.UNKNOWN,
-            path = args.input,
-            obj = None
+            type=ArtifactType.RAW,
+            os=args.binary_os or ArtifactOS.UNKNOWN,
+            arch=args.binary_arch or ArtifactArch.UNKNOWN,
+            path=args.input,
+            obj=None,
         )
 
 
@@ -186,16 +238,15 @@ def main():
     input_artifact = load_input(args)
     config = load_config(args)
 
-    chain.initialize(
-        input = input_artifact,
-        config = config
-    )
+    chain.initialize(input=input_artifact, config=config)
     chain.print_stages()
     chain.process()
 
     if args.output:
         if chain.links[-1].output.type == ArtifactType.DIRECTORY:
-            shutil.copytree(chain.links[-1].output.path, args.output, dirs_exist_ok=True)
+            shutil.copytree(
+                chain.links[-1].output.path, args.output, dirs_exist_ok=True
+            )
         else:
             shutil.copyfile(chain.links[-1].output.path, args.output)
 

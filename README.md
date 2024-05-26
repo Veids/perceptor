@@ -58,6 +58,8 @@ perceptor -c example.yaml -i src.bin -o out.exe
 
 ## Modifier
 
+### XOREncode
+
 Random key length (10 - 50)
 
 ```yaml
@@ -187,6 +189,13 @@ Or get assemblyInfo from DB
   input: *stdin
   name: Inject Mvid into binary
   mvid: !obj [*metadata, "mvid"]
+```
+
+### PSCommentRemoval
+
+```yaml
+- !modifier.PSCommentRemoval
+  name: Remove comments from ps script
 ```
 
 ## CodeWriter
@@ -460,3 +469,4 @@ Get an argument from cmdline
 
 * [https://github.com/Aetsu/OffensivePipeline](OffensivePipeline)
 * [https://github.com/klezVirus/inceptor](inceptor)
+* [https://github.com/PowerShellMafia/PowerSploit](PowerSploit)

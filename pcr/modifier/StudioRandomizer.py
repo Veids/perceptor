@@ -205,7 +205,7 @@ class StudioRandomizer(Link):
             main_project_guid = projects_guid.get(self.target_project)
             if not main_project_guid:
                 raise StudioRandomizerException(
-                    "Couldn't determine project GUID {self.target_project} {projects_guid}"
+                    f"Couldn't determine project GUID {self.target_project} {projects_guid}"
                 )
 
             main_project_guid = main_project_guid.lower()
@@ -327,7 +327,7 @@ class StudioRandomizer(Link):
                 return main_project_path
 
         raise StudioRandomizerException(
-            "Couldn't determine project path {self.target_project} {main_project_path}"
+            f"Couldn't determine project path {self.target_project} {projects_path}"
         )
 
     def randomize_assembly_info(self):

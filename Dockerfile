@@ -24,7 +24,7 @@ WORKDIR /app
 ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1 \
-    POETRY_VERSION=1.6.1
+    POETRY_VERSION=1.8.3
 
 RUN apt-get update && apt-get install -y \
   git \
@@ -46,13 +46,20 @@ FROM debian:bookworm as donut
 
 RUN apt-get update
 RUN apt-get install --no-install-recommends --no-install-suggests -y \
-      mingw-w64 zip build-essential perl python3 xml2 pkg-config automake \
-      libtool autotools-dev make g++ git ruby wget libssl-dev
+  mingw-w64 zip build-essential perl python3 xml2 pkg-config automake \
+  libtool autotools-dev make g++ git ruby wget libssl-dev
 
 WORKDIR /app
 RUN git clone https://github.com/TheWover/donut.git
 WORKDIR /app/donut
 RUN make -f Makefile
+
+FROM mono:latest as mono
+
+WORKDIR /app
+RUN nuget install System.Management.Automation -DependencyVersion Ignore
+RUN find . -iname '*.dll' -path '*/runtimes/unix/*' \ 
+  -exec cp {} /app \;
 
 FROM base as final
 
@@ -63,6 +70,7 @@ RUN apt-get update && apt-get install -y \
 COPY --from=ssage /app/SsagePass/Obfuscation/build/libSsageObfuscator.so /opt/libSsageObfuscator.so
 COPY --from=donut /app/donut/donut /opt/donut
 COPY --from=perceptor /venv /venv
+COPY --from=mono /app/System.Management.Automation.dll /opt/System.Management.Automation.dll
 COPY config.docker.yaml config.yaml
 
 RUN ln -s /usr/bin/python3 /usr/local/bin/python
