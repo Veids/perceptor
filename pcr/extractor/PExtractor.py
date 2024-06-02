@@ -53,7 +53,7 @@ class PExtractor(Link):
         )
 
     def is_dotnet(self, target):
-        clr_header = next(iter(filter(lambda e: e.type == lief.PE.DATA_DIRECTORY.CLR_RUNTIME_HEADER, target.data_directories)))
+        clr_header = next(iter(filter(lambda e: e.type == lief.PE.DataDirectory.TYPES.CLR_RUNTIME_HEADER, target.data_directories)))
         if clr_header.rva == 0 and clr_header.size == 0:
             return False
         return True
@@ -160,7 +160,7 @@ class PExtractor(Link):
                 obj["description"] = assembly.get("description")
             self.output.obj = obj
 
-            manifest_node = next(iter(filter(lambda e: e.id == lief.PE.RESOURCE_TYPES.MANIFEST.value, target.resources.childs)))
+            manifest_node = next(iter(filter(lambda e: e.id == lief.PE.ResourcesManager.TYPE.MANIFEST.value, target.resources.childs)))
             id_node = manifest_node.childs[0]
             lang_node = id_node.childs[0]
 
@@ -184,13 +184,13 @@ class PExtractor(Link):
                 else:
                     return
 
-            version_node = next(iter(filter(lambda e: e.id == lief.PE.RESOURCE_TYPES.VERSION.value, target.resources.childs)))
+            version_node = next(iter(filter(lambda e: e.id == lief.PE.ResourcesManager.TYPE.VERSION.value, target.resources.childs)))
             id_node = version_node.childs[0]
             lang_node = id_node.childs[0]
 
             pe_type = "net" if self.is_dotnet(target) else "etc"
 
-            if target.header.characteristics & lief.PE.HEADER_CHARACTERISTICS.DLL:
+            if target.header.characteristics & lief.PE.Header.CHARACTERISTICS.DLL:
                 pe_type += "_dll"
 
             assemblyAttributes = None

@@ -202,12 +202,12 @@ def load_input(args):
         lb = lief.parse(f.read())
 
     if isinstance(lb, lief.PE.Binary):
-        if lb.header.characteristics & lief.PE.HEADER_CHARACTERISTICS.DLL:
+        if lb.header.characteristics & lief.PE.Header.CHARACTERISTICS.DLL:
             atype = ArtifactType.LIBRARY
         else:
             atype = ArtifactType.PE
 
-        if lb.header.machine == lief.PE.MACHINE_TYPES.AMD64:
+        if lb.header.machine == lief.PE.Header.MACHINE_TYPES.AMD64:
             arch = ArtifactArch.AMD64
         else:
             arch = ArtifactArch.X86

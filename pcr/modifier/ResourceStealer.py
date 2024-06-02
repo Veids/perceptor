@@ -41,12 +41,12 @@ class ResourceStealer(Link):
 
         print(f"    [bold blue]>[/bold blue] Stealing version:\n{target_rm.version}")
 
-        version_node = next(iter(filter(lambda e: e.id == lief.PE.RESOURCE_TYPES.VERSION.value, target_binary.resources.childs)))
+        version_node = next(iter(filter(lambda e: e.id == lief.PE.ResourcesManager.TYPE.VERSION.value, target_binary.resources.childs)))
         id_node = version_node.childs[0]
         lang_node = id_node.childs[0]
 
         if input_rm.has_version:
-            version_node_input = next(iter(filter(lambda e: e.id == lief.PE.RESOURCE_TYPES.VERSION.value, input_binary.resources.childs)))
+            version_node_input = next(iter(filter(lambda e: e.id == lief.PE.ResourcesManager.TYPE.VERSION.value, input_binary.resources.childs)))
             id_node_input = version_node_input.childs[0]
             lang_node_input = id_node_input.childs[0]
             lang_node_input.content = lang_node.content
@@ -62,12 +62,12 @@ class ResourceStealer(Link):
 
         print(f"    [bold blue]>[/bold blue] Stealing manifest:\n{target_rm.manifest}")
 
-        manifest_node = next(iter(filter(lambda e: e.id == lief.PE.RESOURCE_TYPES.MANIFEST.value, target_binary.resources.childs)))
+        manifest_node = next(iter(filter(lambda e: e.id == lief.PE.ResourcesManager.TYPE.MANIFEST.value, target_binary.resources.childs)))
         id_node = manifest_node.childs[0]
         lang_node = id_node.childs[0]
 
         if input_rm.has_manifest:
-            manifest_node_input = next(iter(filter(lambda e: e.id == lief.PE.RESOURCE_TYPES.MANIFEST.value, input_binary.resources.childs)))
+            manifest_node_input = next(iter(filter(lambda e: e.id == lief.PE.ResourcesManager.TYPE.MANIFEST.value, input_binary.resources.childs)))
             id_node_input = manifest_node_input.childs[0]
             lang_node_input = id_node_input.childs[0]
             lang_node_input.content = lang_node.content

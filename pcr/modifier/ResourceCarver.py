@@ -32,13 +32,13 @@ class ResourceCarver(Link):
             return
 
         if input_binary.resources_manager.has_version:
-            version_node = next(iter(filter(lambda e: e.id == lief.PE.RESOURCE_TYPES.VERSION.value, input_binary.resources.childs)))
+            version_node = next(iter(filter(lambda e: e.id == lief.PE.ResourcesManager.TYPE.VERSION.value, input_binary.resources.childs)))
             id_node = version_node.childs[0]
             lang_node = id_node.childs[0]
             lang_node.content = memoryview(self.version)
         else:
             version_node = lief.PE.ResourceDirectory()
-            version_node.id = lief.PE.RESOURCE_TYPES.VERSION.value
+            version_node.id = lief.PE.ResourcesManager.TYPE.VERSION.value
 
             id_node = lief.PE.ResourceDirectory()
             id_node.id = 1
