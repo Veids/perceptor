@@ -258,6 +258,13 @@ Or get assemblyInfo from DB
       name: Execute shellcode
 ```
 
+### PowerShell
+
+```yaml
+- !codewriter.ScriptBlockSmuggling
+  name: Wrap script with ScriptBlockSmuggling technique
+```
+
 ## Extractor
 
 ### PExtractor

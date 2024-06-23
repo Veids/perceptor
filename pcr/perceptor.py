@@ -38,6 +38,7 @@ from pcr.codewriter.blocks.cpp.cpp_exec_remote import cpp_exec_remote
 from pcr.codewriter.blocks.cpp.cpp_clean import cpp_clean
 from pcr.codewriter.blocks.cpp.cpp_get_proc_handle import cpp_get_proc_handle
 from pcr.codewriter.blocks.cpp.cpp_delay import cpp_delay
+from pcr.codewriter.scriptblocksmuggling import ScriptBlockSmuggling
 
 from pcr.compiler.LLVMPass import LLVMPass, LLVMPassConfig
 from pcr.signer.CarbonCopy import CarbonCopy
@@ -145,6 +146,7 @@ YAML_CHAIN = [
     cpp_clean,
     cpp_delay,
     cpp_get_proc_handle,
+    ScriptBlockSmuggling,
 
     # Compilers
     LLVMPass,

@@ -12,6 +12,7 @@ class ArtifactType(str, Enum):
     LIBRARY = "library"
     OBJECT = "object"
     DIRECTORY = "directory"
+    PS1 = "ps1"
     UNKNOWN = "unknown"
 
     def get_extension(self):

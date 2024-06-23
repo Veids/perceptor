@@ -1,0 +1,10 @@
+chain: !Chain
+  links:
+    - !stdin
+      name: Stdin
+
+    - !modifier.PSCommentRemoval
+      name: Remove comments from ps script
+
+    - !codewriter.ScriptBlockSmuggling
+      name: Wrap script with ScriptBlockSmuggling technique

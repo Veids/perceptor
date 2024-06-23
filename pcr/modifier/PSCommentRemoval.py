@@ -4,7 +4,7 @@ from typing import ClassVar
 
 from rich import print
 
-from pcr.lib.artifact import Artifact
+from pcr.lib.artifact import Artifact, ArtifactType
 from pcr.lib.link import Link
 
 
@@ -13,7 +13,7 @@ class PSCommentRemoval(Link):
 
     def deduce_artifact(self) -> Artifact:
         return Artifact(
-            type=self.input.output.type,
+            type=ArtifactType.PS1,
             os=self.input.output.os,
             arch=self.input.output.arch,
             path=str(self.config["main"].tmp / f"stage.{self.id}.ps"),
