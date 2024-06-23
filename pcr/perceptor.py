@@ -18,32 +18,32 @@ from pcr.lib.link import (
 
 # Link imports are here
 from pcr.lib.misc_links import Command
-from pcr.converter.Donut import Donut, DonutConfig
-from pcr.modifier.XOREncode import XOREncode
-from pcr.modifier.RNDOpcodes import RNDOpcodes
-from pcr.modifier.ResourceCarver import ResourceCarver
-from pcr.modifier.StringReplace import StringReplace
-from pcr.modifier.Manifestor import Manifestor
-from pcr.modifier.CreateThreadStub import CreateThreadStub
-from pcr.modifier.StudioRandomizer import StudioRandomizer
-from pcr.modifier.MvidInjector import MvidInjector
-from pcr.modifier.PSCommentRemoval import PSCommentRemoval
-from pcr.extractor.PExtractor import PExtractor
-
-from pcr.codewriter.cpp import cpp
-from pcr.codewriter.blocks.cpp.cpp_alloc import cpp_alloc
-from pcr.codewriter.blocks.cpp.cpp_alloc_remote import cpp_alloc_remote
-from pcr.codewriter.blocks.cpp.cpp_drop import cpp_drop
-from pcr.codewriter.blocks.cpp.cpp_exec_remote import cpp_exec_remote
-from pcr.codewriter.blocks.cpp.cpp_clean import cpp_clean
-from pcr.codewriter.blocks.cpp.cpp_get_proc_handle import cpp_get_proc_handle
-from pcr.codewriter.blocks.cpp.cpp_delay import cpp_delay
-from pcr.codewriter.scriptblocksmuggling import ScriptBlockSmuggling
-
-from pcr.compiler.LLVMPass import LLVMPass, LLVMPassConfig
-from pcr.signer.CarbonCopy import CarbonCopy
-from pcr.signer.SigThief import SigThief
-from pcr.hiver.MetadataDB import MetadataDB
+from pcr.converter import Donut, DonutConfig
+from pcr.modifier import (
+    XOREncode,
+    RNDOpcodes,
+    ResourceCarver,
+    StringReplace,
+    Manifestor,
+    CreateThreadStub,
+    StudioRandomizer,
+    MvidInjector,
+    PSCommentRemoval,
+)
+from pcr.extractor import PExtractor
+from pcr.codewriter import cpp, ScriptBlockSmuggling
+from pcr.codewriter.blocks.cpp import (
+    cpp_alloc,
+    cpp_alloc_remote,
+    cpp_drop,
+    cpp_exec_remote,
+    cpp_clean,
+    cpp_get_proc_handle,
+    cpp_delay,
+)
+from pcr.compiler import LLVMPass, LLVMPassConfig
+from pcr.signer import CarbonCopy, SigThief
+from pcr.hiver import MetadataDB
 
 
 def parse_args():
