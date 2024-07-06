@@ -4,6 +4,7 @@ from base64 import b64encode
 import jinja2
 from pcr.lib.link import Link
 from pcr.lib.artifact import Artifact, ArtifactType
+from pcr.lib.jinja_helpers import filter_random_variable
 
 
 class ScriptBlockSmuggling(Link):
@@ -13,6 +14,7 @@ class ScriptBlockSmuggling(Link):
         env = jinja2.Environment(
             loader=jinja2.PackageLoader("pcr", "codewriter/PSCode")
         )
+        env.filters["RNDVAR"] = filter_random_variable()
         return env.get_template("ScriptBlockSmuggling.jinja")
 
     def deduce_artifact(self) -> Artifact:
