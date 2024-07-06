@@ -1,9 +1,7 @@
-import jinja2
-
 from enum import Enum
 from typing import ClassVar
 
-from pcr.lib.link import CppBlocks
+from pcr.lib.link import BaseBlock
 
 
 class AllocMethodEnum(str, Enum):
@@ -16,24 +14,17 @@ class ProtectionEnum(str, Enum):
     rwx = "rwx"
 
 
-class cpp_alloc(CppBlocks):
-    yaml_tag: ClassVar[str] = u"!cpp.alloc"
+class cpp_alloc(BaseBlock):
+    yaml_tag: ClassVar[str] = "!cpp.alloc"
 
     method: AllocMethodEnum
     protection: ProtectionEnum
 
-    def load_template(self):
-        env = jinja2.Environment(
-            loader=jinja2.PackageLoader("pcr", "codewriter/CPPCode/blocks")
+    def process(self):
+        template = self.load_template(
+            "codewriter/CPPCode/blocks", f"alloc_{self.method.value}.jinja"
         )
-        return env.get_template(f"alloc_{self.method.value}.jinja")
-
-    def render_template(self, template, section):
-        return template.render(
-            link = self.input,
-            section = section,
-            protection = self.protection,
-        )
+        return self.render_template(template, protection=self.protection)
 
     def info(self) -> str:
         return "Convert source artifact into code"

@@ -7,7 +7,7 @@ from rich import print
 from pydantic import InstanceOf
 
 from pcr.lib.artifact import Artifact, ArtifactType
-from pcr.lib.link import Link, EncoderLink, CppBlocks
+from pcr.lib.link import BaseBlock, Link, EncoderLink
 # from pcr.modifier.CreateThreadStub import CreateThreadStub
 
 STACK_SIZE_WARNING = 1024 * 16
@@ -50,7 +50,7 @@ class cpp(Link):
     output_type: OutputTypeEnum
     payload_placement: PayloadPlacementEnum
     decoders: Optional[List[InstanceOf[EncoderLink]]] = None
-    blocks: List[InstanceOf[CppBlocks]]
+    blocks: List[InstanceOf[BaseBlock]]
 
     def load_template(self):
         env = jinja2.Environment(

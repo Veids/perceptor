@@ -1,0 +1,8 @@
+{% if section == "text" %}
+    [Microsoft.SqlServer.Server.SqlFunction]
+    public static void {{ "info_fn" | RNDVAR }}()
+    {
+        string userName = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
+        {{ "response" | RNDVAR }}(userName);
+    }
+{% endif %}

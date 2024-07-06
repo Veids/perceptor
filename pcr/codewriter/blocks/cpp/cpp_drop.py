@@ -1,23 +1,17 @@
-import jinja2
-
 from typing import ClassVar
 
-from pcr.lib.link import CppBlocks
+from pcr.lib.link import BaseBlock
 
 
-class cpp_drop(CppBlocks):
-    yaml_tag: ClassVar[str] = u"!cpp.drop"
+class cpp_drop(BaseBlock):
+    yaml_tag: ClassVar[str] = "!cpp.drop"
 
-    def load_template(self):
-        env = jinja2.Environment(
-            loader=jinja2.PackageLoader("pcr", "codewriter/CPPCode/blocks")
+    def process(self):
+        template = self.load_template(
+            "codewriter/CPPCode/blocks", "starter_dropper.jinja"
         )
-        return env.get_template("starter_dropper.jinja")
-
-    def render_template(self, template, section):
-        return template.render(
-            link = self.input,
-            section = section
+        return self.render_template(template, section="globals"), self.render_template(
+            template, section="text"
         )
 
     def info(self) -> str:

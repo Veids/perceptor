@@ -13,6 +13,7 @@ class ArtifactType(str, Enum):
     OBJECT = "object"
     DIRECTORY = "directory"
     PS1 = "ps1"
+    CS = "cs"
     UNKNOWN = "unknown"
 
     def get_extension(self):
@@ -25,6 +26,10 @@ class ArtifactType(str, Enum):
                 return "exe"
             case ArtifactType.OBJECT:
                 return "o"
+            case ArtifactType.PS1:
+                return "ps"
+            case ArtifactType.CS:
+                return "cs"
         return ""
 
 

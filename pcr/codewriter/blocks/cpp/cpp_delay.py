@@ -1,26 +1,19 @@
-import jinja2
-
 from typing import ClassVar, Annotated
 from annotated_types import Gt
 
-from pcr.lib.link import CppBlocks
+from pcr.lib.link import BaseBlock
 
 
-class cpp_delay(CppBlocks):
-    yaml_tag: ClassVar[str] = u"!cpp.delay"
+class cpp_delay(BaseBlock):
+    yaml_tag: ClassVar[str] = "!cpp.delay"
     seconds: Annotated[int, Gt(0)]
 
-    def load_template(self):
-        env = jinja2.Environment(
-            loader=jinja2.PackageLoader("pcr", "codewriter/CPPCode/blocks")
+    def process(self):
+        template = self.load_template(
+            "codewriter/CPPCode/blocks",
+            "delay_basic.jinja",
         )
-        return env.get_template("delay_basic.jinja")
-
-    def render_template(self, template, section):
-        return template.render(
-            link = self.input,
-            section = section
-        )
+        return self.render_template(template, seconds=self.seconds)
 
     def info(self) -> str:
         return "Insert a delay in code"

@@ -31,7 +31,7 @@ from pcr.modifier import (
     PSCommentRemoval,
 )
 from pcr.extractor import PExtractor
-from pcr.codewriter import cpp, ScriptBlockSmuggling
+from pcr.codewriter import cpp, ScriptBlockSmuggling, SQLAssembly
 from pcr.codewriter.blocks.cpp import (
     cpp_alloc,
     cpp_alloc_remote,
@@ -40,6 +40,10 @@ from pcr.codewriter.blocks.cpp import (
     cpp_clean,
     cpp_get_proc_handle,
     cpp_delay,
+)
+from pcr.codewriter.blocks.csharp import (
+    sql_asm_info,
+    sql_asm_cmd_exec,
 )
 from pcr.compiler import LLVMPass, LLVMPassConfig
 from pcr.signer import CarbonCopy, SigThief
@@ -147,6 +151,9 @@ YAML_CHAIN = [
     cpp_delay,
     cpp_get_proc_handle,
     ScriptBlockSmuggling,
+    SQLAssembly,
+    sql_asm_info,
+    sql_asm_cmd_exec,
 
     # Compilers
     LLVMPass,

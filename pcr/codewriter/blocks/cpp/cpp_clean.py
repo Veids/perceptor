@@ -1,27 +1,19 @@
-import jinja2
-
 from typing import ClassVar
 
-from pcr.lib.link import CppBlocks
+from pcr.lib.link import BaseBlock
 
 
-class cpp_clean(CppBlocks):
-    yaml_tag: ClassVar[str] = u"!cpp.clean"
+class cpp_clean(BaseBlock):
+    yaml_tag: ClassVar[str] = "!cpp.clean"
 
     variable: str
 
-    def load_template(self):
-        env = jinja2.Environment(
-            loader=jinja2.PackageLoader("pcr", "codewriter/CPPCode/blocks")
+    def process(self):
+        template = self.load_template(
+            "codewriter/CPPCode/blocks",
+            "clean.jinja",
         )
-        return env.get_template("clean.jinja")
-
-    def render_template(self, template, section):
-        return template.render(
-            link = self.input,
-            section = section,
-            variable = self.variable
-        )
+        return self.render_template(template, variable=self.variable)
 
     def info(self) -> str:
         return "Clean memory"

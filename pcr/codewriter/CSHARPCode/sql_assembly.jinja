@@ -1,0 +1,17 @@
+using System.Data.SqlTypes;
+using System.Net;
+using Microsoft.SqlServer.Server;
+{{ definitions }}
+
+public partial class {{ "class_name" | RNDVAR }}
+{
+    private static void {{ "response" | RNDVAR }}(string status){
+        SqlDataRecord record = new SqlDataRecord(new SqlMetaData("output", System.Data.SqlDbType.NVarChar, 4000));
+        SqlContext.Pipe.SendResultsStart(record);
+        record.SetString(0, status);
+        SqlContext.Pipe.SendResultsRow(record);
+        SqlContext.Pipe.SendResultsEnd(); 
+    }
+
+    {{ code }}
+}

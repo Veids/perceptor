@@ -1,9 +1,7 @@
-import jinja2
-
 from enum import Enum
 from typing import ClassVar
 
-from pcr.lib.link import CppBlocks
+from pcr.lib.link import BaseBlock
 
 
 class StarterTypeEnum(str, Enum):
@@ -12,25 +10,22 @@ class StarterTypeEnum(str, Enum):
     apc = "apc"
 
 
-class cpp_exec_remote(CppBlocks):
-    yaml_tag: ClassVar[str] = u"!cpp.exec_remote"
+class cpp_exec_remote(BaseBlock):
+    yaml_tag: ClassVar[str] = "!cpp.exec_remote"
 
     early_bird: bool = False
     wait_for_termination: bool = False
     starter_type: StarterTypeEnum = StarterTypeEnum.basic
 
-    def load_template(self):
-        env = jinja2.Environment(
-            loader=jinja2.PackageLoader("pcr", "codewriter/CPPCode/blocks")
+    def process(self):
+        template = self.load_template(
+            "codewriter/CPPCode/blocks",
+            f"starter_injector_{self.starter_type.value}.jinja",
         )
-        return env.get_template(f"starter_injector_{self.starter_type.value}.jinja")
-
-    def render_template(self, template, section):
-        return template.render(
-            link = self.input,
-            section = section,
-            early_bird = self.early_bird,
-            wait_for_termination = self.wait_for_termination
+        return self.render_template(
+            template,
+            early_bird=self.early_bird,
+            wait_for_termination=self.wait_for_termination,
         )
 
     def info(self) -> str:
