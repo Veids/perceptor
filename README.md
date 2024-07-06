@@ -2,6 +2,42 @@
   A python script to automatically apply several transforms to source artifact.
 </p>
 
+# Table of contents
+
+* [Simple example](#simple-example)
+* [Links](#links-yaml-tags)
+  * [Modifier](#modifier)
+    * [XOREncode](#xorencode)
+    * [RNDOpcodes](#rndopcodes)
+    * [StringReplace](#stringreplace)
+    * [ResourceCarver](#resourcecarver)
+    * [Manifestor](#manifestor)
+    * [CreateThreadStub](#createthreadstub)
+    * [StudioRandomizer](#studiorandomizer)
+    * [MvidInjector](#mvidinjector)
+    * [PSCommentRemoval](#pscommentremoval)
+  * [CodeWriter](#codewriter)
+    * [CPP](#cpp)
+      * [Dropper](#dropper)
+      * [Injector](#injector)
+    * [PowerShell](#powershell)
+      * [ScriptBlockSmuggling](#scriptblocksmuggling)
+    * [CSharp](#csharp)
+      * [SQLAssembly](#sqlassembly)
+  * [Extractor](#extractor)
+    * [PExtractor](#pextractor)
+  * [Converter](#converter)
+    * [Donut](#donut)
+  * [Compiler](#compiler)
+    * [LLVMPass](#llvmpass)
+  * [Signer](#signer)
+    * [CarbonCopy](#carboncopy)
+    * [SigThief](#sigthief)
+  * [Hiver](#hiver)
+    * [MetadataDB](#metadatadb)
+* [Constructors](#constructors-yaml-tags)
+* [Credits](#credits)
+
 # Simple example
 
 We want to xor our shellcode, compile it with string encryption pass from plugin and sign.
@@ -260,9 +296,27 @@ Or get assemblyInfo from DB
 
 ### PowerShell
 
+#### ScriptBlockSmuggling
+
 ```yaml
 - !codewriter.ScriptBlockSmuggling
   name: Wrap script with ScriptBlockSmuggling technique
+```
+
+### CSharp
+
+#### SQLAssembly
+
+```yaml
+- !codewriter.SQLAssembly
+  name: Generate SQL Assembly
+  blocks:
+    - !csharp.sql_asm_info
+      name: info procedure
+
+    - !csharp.sql_asm_cmd_exec
+      name: cmd_exec procedure
+      shell: False
 ```
 
 ## Extractor
