@@ -44,6 +44,8 @@ from pcr.codewriter.blocks.cpp import (
 from pcr.codewriter.blocks.csharp import (
     sql_asm_info,
     sql_asm_cmd_exec,
+    sql_asm_download,
+    sql_asm_assembly,
 )
 from pcr.compiler import LLVMPass, LLVMPassConfig
 from pcr.signer import CarbonCopy, SigThief
@@ -154,6 +156,8 @@ YAML_CHAIN = [
     SQLAssembly,
     sql_asm_info,
     sql_asm_cmd_exec,
+    sql_asm_download,
+    sql_asm_assembly,
 
     # Compilers
     LLVMPass,

@@ -1,4 +1,5 @@
 {% if section == "globals" %}
+    using System;
     using System.Diagnostics;
 {% elif section == "text" %}
     [Microsoft.SqlServer.Server.SqlProcedure]
@@ -9,19 +10,20 @@
             proc.StartInfo.FileName = @"C:\Windows\System32\cmd.exe";
             proc.StartInfo.Arguments = string.Format(@" /C {0}", execCommand);
         {% else %}
-            string[] cmd = execCommand.Value.Split(" ");
+            string[] cmd = execCommand.Value.Split(' ');
             proc.StartInfo.FileName = cmd[0];
 
             if(cmd.Length > 1){
-                proc.StartInfo.Arguments = " ".Join(cmd.Skip(1));
+                var segment = new ArraySegment<string>(cmd, 1, cmd.Length - 1);
+                proc.StartInfo.Arguments = String.Join(" ", segment);
             }
         {% endif %}
-        proc.Start();
         proc.StartInfo.UseShellExecute = false;
         proc.StartInfo.RedirectStandardOutput = true;
+        proc.Start();
 
         string output = proc.StandardOutput.ReadToEnd().ToString();
-        {{ "response" | RNDVAR }}(output);
+        {{ "response_fn" | RNDVAR }}(output);
 
         proc.WaitForExit();
         proc.Close();

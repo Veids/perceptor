@@ -1,0 +1,8 @@
+{% if section == "text" %}
+    [Microsoft.SqlServer.Server.SqlProcedure]
+    public static void {{ "download_fn" | RNDVAR }}(SqlString uri, SqlString path)
+    {
+        WebClient myWebClient = new WebClient(); 
+        myWebClient.DownloadFile(uri.Value, path.Value);
+    }
+{% endif %}

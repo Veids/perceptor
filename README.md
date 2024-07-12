@@ -41,7 +41,7 @@
 # Simple example
 
 We want to xor our shellcode, compile it with string encryption pass from plugin and sign.
-Give that, we have the next yaml definition:
+Given that, we have the next yaml definition:
 
 ```yaml
 chain: !Chain

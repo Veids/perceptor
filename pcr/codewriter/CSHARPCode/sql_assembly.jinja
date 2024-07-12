@@ -5,7 +5,7 @@ using Microsoft.SqlServer.Server;
 
 public partial class {{ "class_name" | RNDVAR }}
 {
-    private static void {{ "response" | RNDVAR }}(string status){
+    private static void {{ "response_fn" | RNDVAR }}(string status){
         SqlDataRecord record = new SqlDataRecord(new SqlMetaData("output", System.Data.SqlDbType.NVarChar, 4000));
         SqlContext.Pipe.SendResultsStart(record);
         record.SetString(0, status);
