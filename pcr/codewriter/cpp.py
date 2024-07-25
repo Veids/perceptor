@@ -20,6 +20,7 @@ class OutputTypeEnum(str, Enum):
 class PayloadPlacementEnum(str, Enum):
     data = "data"
     text = "text"
+    remote = "remote"
 
 
 class AllocMethodEnum(str, Enum):
@@ -49,7 +50,8 @@ class cpp(Link):
     functions: FunctionsEnum
     output_type: OutputTypeEnum
     payload_placement: PayloadPlacementEnum
-    decoders: Optional[List[InstanceOf[EncoderLink]]] = None
+    payload_source: Optional[str] = None
+    decoders: List[InstanceOf[EncoderLink]] = list()
     blocks: List[InstanceOf[BaseBlock]]
 
     def load_template(self):
@@ -97,7 +99,7 @@ class cpp(Link):
         code = []
         for block in self.blocks:
             block.input = self
-            d, c = block.process()
+            d, c = block.process(link = self)
             definitions.append(d)
             code.append(c)
 

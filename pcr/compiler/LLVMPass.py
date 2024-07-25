@@ -1,3 +1,4 @@
+import sys
 import subprocess
 import xml.dom.minidom
 
@@ -32,9 +33,9 @@ class LLVMPass(Link):
     linker_args: Optional[List[str]] = []
     resources: Optional[List[str]] = []
     version_info: Optional[FilePath] = None
-    generate_empty_version: Optional[bool] = False
+    generate_empty_version: bool = False
     passes: str
-    dll: Optional[bool] = False
+    dll: bool = False
     exports: Optional[List[str] | Obj] = None
     out_name: Optional[str | Obj] = None
     files: Optional[FilesEnum | List[Path]] = None

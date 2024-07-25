@@ -20,11 +20,11 @@ class cpp_alloc(BaseBlock):
     method: AllocMethodEnum
     protection: ProtectionEnum
 
-    def process(self):
+    def process(self, **kwargs):
         template = self.load_template(
             "codewriter/CPPCode/blocks", f"alloc_{self.method.value}.jinja"
         )
-        return self.render_template(template, protection=self.protection)
+        return self.render_template(template, protection=self.protection, **kwargs)
 
     def info(self) -> str:
         return "Convert source artifact into code"

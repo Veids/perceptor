@@ -1,0 +1,4 @@
+{% if section == "text" %}
+    unsigned char raw[] = {{ shellcode | safe }};
+    size_t length = sizeof(raw);
+{% endif %}

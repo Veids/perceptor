@@ -8,12 +8,12 @@ class cpp_clean(BaseBlock):
 
     variable: str
 
-    def process(self):
+    def process(self, **kwargs):
         template = self.load_template(
             "codewriter/CPPCode/blocks",
             "clean.jinja",
         )
-        return self.render_template(template, variable=self.variable)
+        return self.render_template(template, variable=self.variable, **kwargs)
 
     def info(self) -> str:
         return "Clean memory"

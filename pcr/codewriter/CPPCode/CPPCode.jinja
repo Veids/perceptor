@@ -2,7 +2,6 @@
 
 #include <windows.h>
 #include <processenv.h>
-#include <iostream>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -19,9 +18,6 @@
 DWORD WINAPI run(){
     {% set section="text" %}
     {% include "blocks/payload.jinja" %}
-
-    size_t length = sizeof(raw);
-
     {% include "blocks/decoders.jinja" %}
     {{ code }}
     return 0;

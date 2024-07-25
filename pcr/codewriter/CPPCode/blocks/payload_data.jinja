@@ -1,0 +1,6 @@
+{% if section == "globals" %}
+    __attribute__((__section__(".data")))
+    unsigned char raw[] = {{ shellcode | safe }};
+{% elif section == "text" %}
+    size_t length = sizeof(raw);
+{% endif %}

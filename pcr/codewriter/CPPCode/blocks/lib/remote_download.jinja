@@ -1,0 +1,179 @@
+{% if section == "globals" %}
+    #include <windows.h>
+    #include <wininet.h>
+    #include <fstream>
+
+    // Link with Wininet.lib
+    #pragma comment(lib, "wininet.lib")
+
+    void* DownloadHttp(char *url) {
+        HINTERNET hInternet = NULL, hConnect = NULL, hRequest = NULL;
+        DWORD dwBytesRead = 0, dwBytesAvailable = 0, s;
+        void *buffer = NULL;
+        DWORD chunklen, inlen, code, len, res = 0;
+        bool bSecure = false, bIgnore = true;
+        URL_COMPONENTS  uc;
+        char host[MAX_PATH], file[MAX_PATH], username[64], password[64];
+
+        DWORD flags = INTERNET_FLAG_KEEP_CONNECTION | 
+                      INTERNET_FLAG_DONT_CACHE      | 
+                      INTERNET_FLAG_NO_UI           |
+                      INTERNET_FLAG_PRAGMA_NOCACHE  |
+                      INTERNET_FLAG_NO_AUTO_REDIRECT;
+
+        memset(&uc, 0, sizeof(uc));
+        uc.dwStructSize     = sizeof(uc);
+        
+        uc.lpszHostName     = host;
+        uc.dwHostNameLength = sizeof(host);
+        
+        uc.lpszUrlPath      = file;
+        uc.dwUrlPathLength  = sizeof(file);
+        
+        uc.lpszUserName     = username;
+        uc.dwUserNameLength = sizeof(username);
+        
+        uc.lpszPassword     = password;
+        uc.dwPasswordLength = sizeof(password);
+
+        if (!InternetCrackUrl(url, 0, ICU_DECODE, &uc)){
+            printf("Failed to parse URL\n");
+            return NULL;
+        }
+
+        bSecure = (uc.nScheme == INTERNET_SCHEME_HTTPS);
+
+        // if secure connection, update the flags
+        if(bSecure){
+            flags |= INTERNET_FLAG_SECURE;
+
+            // ignore invalid certificates?
+            if (bIgnore)
+                flags |= INTERNET_FLAG_IGNORE_CERT_CN_INVALID |
+                         INTERNET_FLAG_IGNORE_CERT_DATE_INVALID; 
+        }
+
+        // Initialize WinINet
+        hInternet = InternetOpen(NULL, INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+        if (hInternet == NULL) {
+            printf("InternetOpen failed with error\n");
+            return NULL;
+        }
+
+        // Connect to server
+        hConnect = InternetConnect(hInternet, host, uc.nPort, NULL, NULL, INTERNET_SERVICE_HTTP, 0, 0);
+        if (hConnect == NULL) {
+            printf("InternetConnect failed with error\n");
+            InternetCloseHandle(hInternet);
+            return NULL;
+        }
+
+        if (uc.dwUrlPathLength == 0) {
+            file[0] = '/';
+            file[1] = '\0';
+        }
+
+        // Open request
+        hRequest = HttpOpenRequest(hConnect, NULL, file, NULL, NULL, NULL, flags, 0);
+        if (hRequest == NULL) {
+            printf("HttpOpenRequest failed with error\n");
+            InternetCloseHandle(hConnect);
+            InternetCloseHandle(hInternet);
+            return NULL;
+        }
+
+        if(bSecure){
+            if(flags & INTERNET_FLAG_IGNORE_CERT_CN_INVALID) {
+                s = SECURITY_FLAG_IGNORE_UNKNOWN_CA |
+                    SECURITY_FLAG_IGNORE_CERT_DATE_INVALID |
+                    SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
+                    SECURITY_FLAG_IGNORE_WRONG_USAGE |
+                    SECURITY_FLAG_IGNORE_REVOCATION; 
+
+                InternetSetOption(hRequest, INTERNET_OPTION_SECURITY_FLAGS, &s, sizeof(s));
+            }
+        }
+
+        // set username
+        if(uc.dwUserNameLength != 0) {
+            if(!InternetSetOption(
+                hRequest, INTERNET_OPTION_USERNAME,
+                uc.lpszUserName, uc.dwUserNameLength)
+            ){
+                printf("Error with InternetSetOption(INTERNET_OPTION_USERNAME)\n");
+            }
+        }
+
+        // set password
+        if(uc.dwPasswordLength != 0) {
+            if(!InternetSetOption(
+                hRequest, INTERNET_OPTION_PASSWORD,
+                uc.lpszPassword, uc.dwPasswordLength)
+            ){
+                printf("Error with InternetSetOption(INTERNET_OPTION_PASSWORD)");
+            }
+        }
+
+        // Send request
+        if (!HttpSendRequest(hRequest, NULL, 0, NULL, 0)) {
+            printf("HttpSendRequest failed with error %d\n", GetLastError());
+            InternetCloseHandle(hRequest);
+            InternetCloseHandle(hConnect);
+            InternetCloseHandle(hInternet);
+            return NULL;
+        }
+
+        len = sizeof(DWORD);
+        code = 0;
+
+        if (!HttpQueryInfo(hRequest, HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER, &code, &len, 0)){
+            InternetCloseHandle(hRequest);
+            InternetCloseHandle(hConnect);
+            InternetCloseHandle(hInternet);
+            return NULL;
+        }
+
+        if (code != HTTP_STATUS_OK) {
+            printf("HTTP status is not HTTP_STATUS_OK\n");
+            InternetCloseHandle(hRequest);
+            InternetCloseHandle(hConnect);
+            InternetCloseHandle(hInternet);
+            return NULL;
+        }
+
+        inlen = 0;
+
+        // Read data in chunks
+        while (true) {
+            if (!InternetQueryDataAvailable(hRequest, &chunklen, 0, 0)) {
+                break;
+            }
+            
+            if (chunklen == 0) {
+                break; // Exit loop if no more data is available
+            }
+
+            if (buffer == NULL) {
+              // allocate buffer for chunk to be read
+              buffer = HeapAlloc(GetProcessHeap(), HEAP_NO_SERIALIZE, chunklen);
+              if(buffer == NULL)
+                return NULL;
+            } else {
+              buffer = HeapReAlloc(GetProcessHeap(), HEAP_NO_SERIALIZE, buffer, inlen + chunklen);
+
+              if (buffer == NULL)
+                return NULL;
+            }
+
+            res = InternetReadFile(hRequest, (char*)buffer+inlen, chunklen, &dwBytesRead);
+            inlen += chunklen;
+        }
+
+        // Clean up
+        if (hRequest) InternetCloseHandle(hRequest);
+        if (hConnect) InternetCloseHandle(hConnect);
+        if (hInternet) InternetCloseHandle(hInternet);
+
+        return buffer;
+    }
+{% endif %}

