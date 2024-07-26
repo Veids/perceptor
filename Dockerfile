@@ -1,7 +1,7 @@
-FROM silkeh/clang:17 AS base
+FROM silkeh/clang:18 AS base
 WORKDIR /app
 
-FROM base as ssage
+FROM base AS ssage
 
 RUN apt-get update && apt-get install -y \
   git \
@@ -10,10 +10,10 @@ RUN apt-get update && apt-get install -y \
 
 RUN git clone --single-branch --branch dev https://github.com/Veids/SsagePass.git
 RUN cd SsagePass/Obfuscation && \
-    cmake -S . -B build -DLT_LLVM_INSTALL_DIR=/usr/lib/llvm-17 -DCMAKE_BUILD_TYPE=release && \
+    cmake -S . -B build -DLT_LLVM_INSTALL_DIR=/usr/lib/llvm-18 -DCMAKE_BUILD_TYPE=release && \
     cmake --build build -j $(nproc)
 
-FROM python:3.11-slim-bookworm as perceptor
+FROM python:3.11-slim-bookworm AS perceptor
 
 ENV PYTHONFAULTHANDLER=1 \
     PYTHONHASHSEED=random \
@@ -42,7 +42,7 @@ RUN poetry export --without-hashes -f requirements.txt | /venv/bin/pip install -
 COPY . .
 RUN poetry build && /venv/bin/pip install dist/*.whl
 
-FROM debian:bookworm as donut
+FROM debian:bookworm AS donut
 
 RUN apt-get update
 RUN apt-get install --no-install-recommends --no-install-suggests -y \
@@ -54,14 +54,14 @@ RUN git clone https://github.com/TheWover/donut.git
 WORKDIR /app/donut
 RUN make -f Makefile
 
-FROM mono:latest as mono
+FROM mono:latest AS mono
 
 WORKDIR /app
 RUN nuget install System.Management.Automation -DependencyVersion Ignore
 RUN find . -iname '*.dll' -path '*/runtimes/unix/*' \ 
   -exec cp {} /app \;
 
-FROM base as final
+FROM base AS final
 
 RUN apt-get update && apt-get install -y \
   imagemagick \
