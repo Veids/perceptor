@@ -112,6 +112,10 @@
             LPSTARTUPINFOA lpStartupInfo,
             LPPROCESS_INFORMATION lpProcessInformation
         );
+    {% elif name == "Sleep" %}
+        typedef void (WINAPI *Sleep_t)(
+            DWORD dwMilliseconds
+        );
     {% else %}
         {{ raise("Function is unknown" . name) }}
     {% endif %}
