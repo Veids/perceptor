@@ -30,8 +30,8 @@ class LLVMPass(Link):
     yaml_tag: ClassVar[str] = u"!compiler.LLVMPass"
     icon: Optional[FilePath | InstanceOf[Link] | bytes | Obj] = None
     manifest: Optional[FilePath | InstanceOf[Link]] = None
-    linker_args: Optional[List[str]] = []
-    resources: Optional[List[str]] = []
+    linker_args: List[str] | Obj = list()
+    resources: List[str] = list()
     version_info: Optional[FilePath] = None
     generate_empty_version: bool = False
     passes: str

@@ -1,9 +1,9 @@
 from typing import ClassVar
 
-from pcr.lib.link import BaseBlock
+from pcr.lib.link import CPPBaseBlock
 
 
-class cpp_drop(BaseBlock):
+class cpp_drop(CPPBaseBlock):
     yaml_tag: ClassVar[str] = "!cpp.drop"
 
     def process(self, **kwargs):

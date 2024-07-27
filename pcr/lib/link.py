@@ -58,6 +58,10 @@ class BaseBlock(Link, ABC):
         )
 
 
+class CPPBaseBlock(BaseBlock):
+    linker_args: List[str] = list()
+
+
 class Stdin(Link):
     yaml_tag: ClassVar[str] = "!stdin"
 
@@ -79,7 +83,12 @@ class Obj(BaseModel):
         if (objt := instance.__class__.__annotations__.get("obj")) is None:
             raise AttributeError(f"{instance.__class__.__name__} doesn't define obj")
 
-        ptype = typing.get_args(objt)[0]
+        ptype = typing.get_args(objt)
+        if len(ptype):
+            ptype = ptype[0]
+        else:
+            ptype = objt
+
         for x in prop.split("."):
             ptype = ptype.__annotations__.get(x)
             if ptype is None:

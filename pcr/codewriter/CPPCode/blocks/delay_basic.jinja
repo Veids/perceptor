@@ -4,5 +4,5 @@
     {{ function_typedef("Sleep") }}
 {% else %}
     {{ function_definition("Sleep") }}
-    pSleep({{ seconds }});
+    pSleep({{ seconds }} * 1000);
 {% endif %}

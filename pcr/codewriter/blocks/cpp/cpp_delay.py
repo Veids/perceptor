@@ -1,10 +1,10 @@
 from typing import ClassVar, Annotated
 from annotated_types import Gt
 
-from pcr.lib.link import BaseBlock
+from pcr.lib.link import CPPBaseBlock
 
 
-class cpp_delay(BaseBlock):
+class cpp_delay(CPPBaseBlock):
     yaml_tag: ClassVar[str] = "!cpp.delay"
     seconds: Annotated[int, Gt(0)]
 

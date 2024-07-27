@@ -4,10 +4,10 @@ from enum import Enum
 from typing_extensions import TypedDict
 from typing import ClassVar, Optional, List
 from rich import print
-from pydantic import InstanceOf
+from pydantic import InstanceOf, BaseModel
 
 from pcr.lib.artifact import Artifact, ArtifactType
-from pcr.lib.link import BaseBlock, Link, EncoderLink
+from pcr.lib.link import CPPBaseBlock, Link, EncoderLink
 # from pcr.modifier.CreateThreadStub import CreateThreadStub
 
 STACK_SIZE_WARNING = 1024 * 16
@@ -44,15 +44,20 @@ class AllocDict(TypedDict):
     functions: FunctionsEnum
 
 
+class CPPObj(BaseModel):
+    linker_args: list[str] = list()
+
+
 class cpp(Link):
-    yaml_tag: ClassVar[str] = u"!codewriter.cpp"
+    yaml_tag: ClassVar[str] = "!codewriter.cpp"
 
     functions: FunctionsEnum
     output_type: OutputTypeEnum
     payload_placement: PayloadPlacementEnum
     payload_source: Optional[str] = None
     decoders: List[InstanceOf[EncoderLink]] = list()
-    blocks: List[InstanceOf[BaseBlock]]
+    blocks: List[InstanceOf[CPPBaseBlock]]
+    obj: CPPObj = CPPObj()
 
     def load_template(self):
         env = jinja2.Environment(
@@ -62,55 +67,56 @@ class cpp(Link):
 
     def deduce_artifact(self) -> Artifact:
         return Artifact(
-            type = ArtifactType.CPP,
-            os = self.input.output.os,
-            arch = self.input.output.arch,
-            path = str(self.config["main"].tmp / f"stage.{self.id}.cpp"),
+            type=ArtifactType.CPP,
+            os=self.input.output.os,
+            arch=self.input.output.arch,
+            path=str(self.config["main"].tmp / f"stage.{self.id}.cpp"),
         )
 
     def stack_warning(self):
-        if self.payload_placement == PayloadPlacementEnum.text and self.input.output.path.stat().st_size > STACK_SIZE_WARNING:
-            print("    [bold yellow]![/bold yellow] Payload size is too high to place it into the stack, consider switching to another location")
+        if (
+            self.payload_placement == PayloadPlacementEnum.text
+            and self.input.output.path.stat().st_size > STACK_SIZE_WARNING
+        ):
+            print(
+                "    [bold yellow]![/bold yellow] Payload size is too high to place it into the stack, consider switching to another location"
+            )
 
     def process(self):
         self.output = self.deduce_artifact()
         self.stack_warning()
 
+        if self.payload_placement == PayloadPlacementEnum.remote:
+            self.obj.linker_args.append("-lwininet")
+
         shellcode = self.input.output.read()
         print(f"    [bold blue]>[/bold blue] Payload size is {len(shellcode)} bytes")
-        shellcode = "".join('\\x%x' % x for x in shellcode)
+        shellcode = "".join("\\x%x" % x for x in shellcode)
 
         decoders = []
         for link in self.decoders:
             if link.decoder_data:
                 decoders.append(
-                    {
-                        "name": link.__class__.__name__,
-                        "decoder_data": link.decoder_data
-                    }
+                    {"name": link.__class__.__name__, "decoder_data": link.decoder_data}
                 )
-
-        # stub = None
-        # for link in reversed(self.links):
-        #     if isinstance(link, CreateThreadStub):
-        #         stub = link
 
         definitions = []
         code = []
         for block in self.blocks:
             block.input = self
-            d, c = block.process(link = self)
+            d, c = block.process(link=self)
             definitions.append(d)
             code.append(c)
+            self.obj.linker_args += block.linker_args
 
         template = self.load_template()
         self.output.write(
             template.render(
-                shellcode = f"\"{shellcode}\"",
-                decoders = decoders,
-                link = self,
-                definitions = "\n".join(definitions),
-                code = "\n".join(code),
+                shellcode=f'"{shellcode}"',
+                decoders=decoders,
+                link=self,
+                definitions="\n".join(definitions),
+                code="\n".join(code),
             ).encode()
         )
 
