@@ -31,7 +31,7 @@ class LLVMPass(Link):
     icon: Optional[FilePath | InstanceOf[Link] | bytes | Obj] = None
     manifest: Optional[FilePath | InstanceOf[Link]] = None
     linker_args: List[str] | Obj = list()
-    resources: List[str] = list()
+    resources: List[str | InstanceOf[Link]] = list()
     version_info: Optional[FilePath] = None
     generate_empty_version: bool = False
     passes: str
@@ -307,11 +307,17 @@ END
 
         self.resources.append(exports_out_path)
 
+    def convert_resources_links(self):
+        for i, x in enumerate(self.resources):
+            if isinstance(x, Link):
+                self.resources[i] = str(x.output.path)
+
     def generate_resources(self):
         self.generate_icon()
         self.generate_version_info()
         self.generate_manifest()
         self.generate_exports()
+        self.convert_resources_links()
 
     def clang_compile(self):
         clang_cmd = [

@@ -29,6 +29,7 @@ from pcr.modifier import (
     StudioRandomizer,
     MvidInjector,
     PSCommentRemoval,
+    ShellcodeMutator,
 )
 from pcr.extractor import PExtractor
 from pcr.codewriter import cpp, ScriptBlockSmuggling, SQLAssembly
@@ -140,6 +141,7 @@ YAML_CHAIN = [
     StudioRandomizer,
     MvidInjector,
     PSCommentRemoval,
+    ShellcodeMutator,
 
     # Extractors
     PExtractor,

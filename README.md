@@ -235,6 +235,18 @@ Or get assemblyInfo from DB
   name: Remove comments from ps script
 ```
 
+### ShellcodeMutator
+
+```yaml
+    - !modifier.ShellcodeMutator
+      &stub
+      name: "Mutate shellcode"
+      number_of_passes: 2
+      junk_chance: 30
+      block_chance: 30
+      mutate_chance: 30
+```
+
 ## CodeWriter
 
 ### CPP

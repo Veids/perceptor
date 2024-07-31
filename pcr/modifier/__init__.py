@@ -7,6 +7,7 @@ from .CreateThreadStub import CreateThreadStub
 from .StudioRandomizer import StudioRandomizer
 from .MvidInjector import MvidInjector
 from .PSCommentRemoval import PSCommentRemoval
+from .ShellcodeMutator import ShellcodeMutator
 
 __all__ = [
     "XOREncode",
@@ -18,4 +19,5 @@ __all__ = [
     "StudioRandomizer",
     "MvidInjector",
     "PSCommentRemoval",
+    "ShellcodeMutator",
 ]
