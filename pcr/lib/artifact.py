@@ -55,10 +55,9 @@ class ArtifactArch(str, Enum):
 
 class Artifact(BaseModel):
     type: ArtifactType
-    os: Optional[ArtifactOS] = ArtifactOS.UNKNOWN
-    arch: Optional[ArtifactArch] = ArtifactOS.UNKNOWN
+    os: ArtifactOS = ArtifactOS.UNKNOWN
+    arch: ArtifactArch = ArtifactArch.UNKNOWN
     path: Optional[Path] = None
-    obj: Optional[Any] = None
 
     def read(self):
         return self.path.read_bytes()

@@ -16,7 +16,7 @@ class OutputConfig(TypedDict):
 
 
 class Command(Link):
-    yaml_tag: ClassVar[str] = u"!command"
+    yaml_tag: ClassVar[str] = "!command"
 
     cmd: str
     output_config: OutputConfig
@@ -28,24 +28,24 @@ class Command(Link):
             extension = self.output_config["os"].get_library_extension()
 
         return Artifact(
-            type = self.output_config["type"],
-            os = self.output_config["os"],
-            arch = self.output_config["arch"],
-            path = str(self.config["main"].tmp / f"stage.{self.id}.{extension}")
+            type=self.output_config["type"],
+            os=self.output_config["os"],
+            arch=self.output_config["arch"],
+            path=str(self.config["main"].tmp / f"stage.{self.id}.{extension}"),
         )
 
     def process(self):
         self.output = self.deduce_artifact()
 
         cmd = self.cmd.format(
-            name = self.name,
-            output_path = self.output.path,
-            config = self.config,
-            codelib = CodeLib()
+            name=self.name,
+            output_path=self.output.path,
+            config=self.config,
+            codelib=CodeLib(),
         )
 
         print(f"    [bold blue]>[/bold blue] Running command: {cmd}")
-        subprocess.check_output(cmd, stderr = subprocess.STDOUT, shell = self.shell)
+        subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=self.shell)
 
     def info(self) -> str:
         return "Run arbitrary command"

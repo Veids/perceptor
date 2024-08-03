@@ -7,26 +7,26 @@ from pcr.lib.artifact import Artifact, ArtifactType, ArtifactOS, ArtifactArch
 
 
 class AssemblyIdentityDict(TypedDict):
-    version: NotRequired[str | Obj] = None
-    processorArchitecture: NotRequired[str | Obj] = None
-    name: NotRequired[str | Obj] = None
-    type: NotRequired[str | Obj] = None
+    version: NotRequired[str | Obj]
+    processorArchitecture: NotRequired[str | Obj]
+    name: NotRequired[str | Obj]
+    type: NotRequired[str | Obj]
 
 
 class Manifestor(Link):
-    yaml_tag: ClassVar[str] = u"!modifier.Manifestor"
+    yaml_tag: ClassVar[str] = "!modifier.Manifestor"
     keep: Optional[List[str]] = None
     assemblyIdentity: Optional[AssemblyIdentityDict] = None
     description: Optional[str] = None
-    manifest: Optional[Obj] = None
+    manifest: Optional[bytes | Obj] = None
+    obj: dict = {}
 
     def deduce_artifact(self) -> Artifact:
         return Artifact(
-            type = ArtifactType.RAW,
-            os = ArtifactOS.UNKNOWN,
-            arch = ArtifactArch.UNKNOWN,
-            path = str(self.config["main"].tmp / f"stage.{self.id}.xml"),
-            obj = {}
+            type=ArtifactType.RAW,
+            os=ArtifactOS.UNKNOWN,
+            arch=ArtifactArch.UNKNOWN,
+            path=str(self.config["main"].tmp / f"stage.{self.id}.xml"),
         )
 
     def handle_assemblyIdentity(self, node):
@@ -35,20 +35,22 @@ class Manifestor(Link):
                 node.attributes[k] = v
 
         for k, v in node.attributes.items():
-            self.output.obj[k] = v
+            self.obj[k] = v
 
     def handle_description(self, node):
         if self.description is not None:
             node.firstChild.nodeValue = self.description
 
-        self.output.obj["description"] = node.firstChild.nodeValue
+        self.obj["description"] = node.firstChild.nodeValue
 
     def process(self):
         self.output = self.deduce_artifact()
         if self.manifest is None:
             document = parse(str(self.input.output.path))
         else:
-            document = parseString(self.manifest.decode().removeprefix("\\xef\\xbb\\xbf"))
+            document = parseString(
+                self.manifest.decode().removeprefix("\\xef\\xbb\\xbf")
+            )
         document = document.childNodes[0]
 
         if self.keep is not None:

@@ -1,12 +1,12 @@
 import sys
-import random
+
+from typing import ClassVar
+from random import randrange
 
 import coffipy
 
 from rich import print
 from pydantic import Field
-from typing import ClassVar
-
 from furikuripy.common import rng
 from furikuripy.fuku_obfuscator import FukuObfuscator
 from furikuripy.fuku_code_holder import FukuCodeHolder, FukuImageRelocationX64
@@ -38,7 +38,7 @@ def arch_to_furikuri_arch(arch):
 class ShellcodeMutator(Link):
     yaml_tag: ClassVar[str] = "!modifier.ShellcodeMutator"
 
-    seed: int = random.randrange(sys.maxsize)
+    seed: int = Field(default_factory=lambda: randrange(sys.maxsize))
     complexity: int = Field(default=3)
     number_of_passes: int = Field(default=2, ge=1)
     junk_chance: int = Field(default=30, ge=0, le=100)

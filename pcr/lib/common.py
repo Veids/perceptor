@@ -6,6 +6,7 @@ from typing import ClassVar, Optional
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.traceback import install
+
 install(show_locals=False)
 
 console = Console()
@@ -18,7 +19,7 @@ log.setLevel(logging.INFO)
 
 def flatten(_list):
     for x in _list:
-        if hasattr(x, '__iter__') and not isinstance(x, str):
+        if hasattr(x, "__iter__") and not isinstance(x, str):
             for y in flatten(x):
                 yield y
         else:
@@ -33,7 +34,7 @@ class YamlFuck:
 
 
 class MainConfig(BaseModel, YamlFuck):
-    yaml_tag: ClassVar[str] = u"!MainConfig"
+    yaml_tag: ClassVar[str] = "!MainConfig"
     tmp: Path
     cecil: Optional[FilePath]
     automation: Optional[FilePath]

@@ -29,7 +29,6 @@ class ResourceStealer(Link):
             os = self.input.output.os,
             arch = self.input.output.arch,
             path = str(self.config["main"].tmp / f"stage.{self.id}.exe"),
-            obj = None
         )
 
     def steal_version_info(self, input_binary, target_binary):

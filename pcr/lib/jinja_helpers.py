@@ -13,4 +13,5 @@ def filter_random_variable():
 
     return _wrapper
 
+
 common_filter_random_variable = filter_random_variable()

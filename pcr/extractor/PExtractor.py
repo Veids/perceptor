@@ -3,7 +3,7 @@ import xmltodict
 
 from enum import Enum
 from rich import print
-from typing import ClassVar
+from typing import ClassVar, Optional
 from pydantic import FilePath, BaseModel
 from wand.image import Image
 
@@ -34,6 +34,8 @@ class PExtractor(Link):
     target: FilePath
     entity: EntityEnum
 
+    obj: Optional[dict] = None
+
     def deduce_artifact(self) -> Artifact:
         if self.entity == EntityEnum.icon:
             extension = "ico"
@@ -49,7 +51,6 @@ class PExtractor(Link):
             os = ArtifactOS.UNKNOWN,
             arch = ArtifactArch.UNKNOWN,
             path = str(self.config["main"].tmp / f"stage.{self.id}.{extension}"),
-            obj = None
         )
 
     def is_dotnet(self, target):
@@ -111,7 +112,7 @@ class PExtractor(Link):
     def extract_exports(self, target):
         if target.has_exports:
             names = [x.name for x in target.exported_functions]
-            self.output.obj = {
+            self.obj = {
                 "exports": names
             }
             self.output.path.write_text("\n".join(names))
@@ -119,6 +120,9 @@ class PExtractor(Link):
     def process(self):
         self.output = self.deduce_artifact()
         target = lief.parse(str(self.target))
+
+        if not target:
+            raise Exception(f"Failed to parse target with lief {self.target}")
 
         if not target.has_resources:
             raise ValueError(f"Target {target.name} has no resources")
@@ -149,22 +153,21 @@ class PExtractor(Link):
 
             manifest = target.resources_manager.manifest
 
-            obj = {}
+            self.obj = {}
             manifest_dict = xmltodict.parse(manifest.removeprefix("\\xef\\xbb\\xbf"))
             assembly = manifest_dict["assembly"]
             if assembly is not None:
                 if assemblyIdentity := assembly.get("assemblyIdentity"):
                     for k, v in assemblyIdentity.items():
-                        obj[k.replace('@', '')] = v
+                        self.obj[k.replace('@', '')] = v
 
-                obj["description"] = assembly.get("description")
-            self.output.obj = obj
+                self.obj["description"] = assembly.get("description")
 
             manifest_node = next(iter(filter(lambda e: e.id == lief.PE.ResourcesManager.TYPE.MANIFEST.value, target.resources.childs)))
             id_node = manifest_node.childs[0]
             lang_node = id_node.childs[0]
 
-            self.output.obj["directory_config"] = {
+            self.obj["directory_config"] = {
                 "code_page": lang_node.code_page,
                 "directory_node": {
                     "major_version": manifest_node.major_version,
@@ -201,7 +204,7 @@ class PExtractor(Link):
             print("    [bold blue]>[/bold blue] Using lief to get assemblyInfo")
             assemblyInfo = self.get_assembly_info_lief(target)
 
-            self.output.obj = {
+            self.obj = {
                 "directory_config": {
                     "code_page": lang_node.code_page,
                     "directory_node": {

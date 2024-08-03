@@ -1,12 +1,16 @@
-import random
+import sys
 
+from random import Random, randrange
 from enum import Enum
 from typing import ClassVar
 from rich import print
 from keystone import Ks, KS_ARCH_X86, KS_MODE_32, KS_MODE_64
+from pydantic import Field
 
 from pcr.lib.artifact import Artifact, ArtifactType, ArtifactOS, ArtifactArch
 from pcr.lib.link import EncoderLink
+
+rng = Random()
 
 
 class WhereEnum(str, Enum):
@@ -18,6 +22,7 @@ class RNDOpcodes(EncoderLink):
     yaml_tag: ClassVar[str] = u"!modifier.RNDOpcodes"
     n: str
     where: WhereEnum
+    seed: int = Field(default_factory=lambda: randrange(sys.maxsize))
 
     def verify_args(self):
         if self.input.output.type != ArtifactType.RAW:
@@ -32,7 +37,6 @@ class RNDOpcodes(EncoderLink):
             os = self.input.output.os,
             arch = self.input.output.arch,
             path = str(self.config["main"].tmp / f"stage.{self.id}.bin"),
-            obj = None
         )
 
     def generate_opcodes(self):
@@ -60,7 +64,7 @@ class RNDOpcodes(EncoderLink):
 
         if "-" in self.n:
             start, end = self.n.split('-')
-            n = random.randint(int(start), int(end))
+            n = rng.randint(int(start), int(end))
         else:
             n = int(self.n)
 
@@ -74,12 +78,12 @@ class RNDOpcodes(EncoderLink):
             instructions = x86_instructions + x64_instructions
             ks = Ks(KS_ARCH_X86, KS_MODE_64)
 
-        scope = random.choices(instructions, k = n)
+        scope = rng.choices(instructions, k = n)
         for inst in scope:
             if "{" in inst:
-                bytecode, count = ks.asm(inst.format(random.randint(0, 0xFFFFFFFF)))
+                bytecode, _ = ks.asm(inst.format(rng.randint(0, 0xFFFFFFFF)))
             else:
-                bytecode, count = ks.asm(inst)
+                bytecode, _ = ks.asm(inst)
             opcodes += bytes(bytecode)
 
         return opcodes
@@ -88,6 +92,9 @@ class RNDOpcodes(EncoderLink):
         self.verify_args()
         self.output = self.deduce_artifact()
         data = self.input.output.read()
+
+        print(f"    [bold blue]>[/bold blue] Seed: {self.seed}")
+        rng.seed(self.seed)
 
         opcodes = self.generate_opcodes()
         if self.where == WhereEnum.start:

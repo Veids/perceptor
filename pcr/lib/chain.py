@@ -9,27 +9,16 @@ from pcr.lib.link import YamlFuck, Stdin, Link
 
 
 class Chain(BaseModel, YamlFuck):
-    yaml_tag: ClassVar[str] = u"!Chain"
+    yaml_tag: ClassVar[str] = "!Chain"
     links: List[InstanceOf[Link]]
 
     def print_stages(self):
         table = Table(
-            "Stage",
-            "Name",
-            "Comment",
-            "Link tag",
-            "Link info",
-            title="Stages queue"
+            "Stage", "Name", "Comment", "Link tag", "Link info", title="Stages queue"
         )
 
         for i, link in enumerate(self.links):
-            table.add_row(
-                str(i),
-                link.name,
-                link.comment,
-                link.yaml_tag,
-                link.info()
-            )
+            table.add_row(str(i), link.name, link.comment, link.yaml_tag, link.info())
 
         console.print(table)
 

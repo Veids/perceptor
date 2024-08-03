@@ -57,7 +57,6 @@ class LLVMPass(Link):
             os = self.input.output.os,
             arch = self.input.output.arch,
             path = str(self.config["main"].tmp / out_name),
-            obj = None
         )
 
     def llvm_ir_args(self):

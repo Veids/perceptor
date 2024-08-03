@@ -3,7 +3,7 @@ import typing
 import ruamel
 import jinja2
 
-from typing import ClassVar, Optional, ForwardRef, List
+from typing import Any, ClassVar, Optional, ForwardRef, List
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, InstanceOf
 
@@ -15,6 +15,7 @@ Link = ForwardRef("Link")
 
 
 class Link(BaseModel, YamlFuck, ABC):
+    yaml_tag: ClassVar["str"]
     input: Optional[InstanceOf[Link]] = None
     output: Optional[InstanceOf[Artifact]] = None
     comment: Optional[str] = None
@@ -25,7 +26,7 @@ class Link(BaseModel, YamlFuck, ABC):
     do_raise: Optional[bool] = False
 
     @abstractmethod
-    def process(self):
+    def process(self) -> Any:
         pass
 
     @abstractmethod

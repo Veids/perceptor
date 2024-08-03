@@ -20,7 +20,6 @@ class CreateThreadStub(Link):
             os = self.input.output.os,
             arch = self.input.output.arch,
             path = str(self.config["main"].tmp / f"stage.{self.id}.bin"),
-            obj = None,
         )
 
     def offset(self):
