@@ -42,6 +42,7 @@ from pcr.codewriter.blocks.cpp import (
     cpp_get_proc_handle,
     cpp_delay,
     cpp_mockingjay,
+    cpp_prepare_syscalls,
 )
 from pcr.codewriter.blocks.csharp import (
     sql_asm_info,
@@ -156,6 +157,7 @@ YAML_CHAIN = [
     cpp_get_proc_handle,
     cpp_delay,
     cpp_mockingjay,
+    cpp_prepare_syscalls,
     ScriptBlockSmuggling,
     SQLAssembly,
     sql_asm_info,

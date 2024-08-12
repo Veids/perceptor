@@ -6,6 +6,7 @@ from .cpp_clean import cpp_clean
 from .cpp_get_proc_handle import cpp_get_proc_handle
 from .cpp_delay import cpp_delay
 from .cpp_mockingjay import cpp_mockingjay
+from .cpp_prepare_syscalls import cpp_prepare_syscalls
 
 __all__ = [
     "cpp_alloc",
@@ -15,5 +16,6 @@ __all__ = [
     "cpp_clean",
     "cpp_get_proc_handle",
     "cpp_delay",
-    "cpp_mockingjay"
+    "cpp_mockingjay",
+    "cpp_prepare_syscalls",
 ]

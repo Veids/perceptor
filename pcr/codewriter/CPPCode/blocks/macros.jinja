@@ -138,3 +138,10 @@
     {% endif %}
 {% endif %}
 {% endmacro %}
+
+{% macro syscall_call(name, args, output_arg = "status") %}
+    SyscallId = 0;
+    GetSyscallId(hNtdll, &SyscallId, (PCHAR)"{{ name }}");
+    setup(SyscallId, spoofJump);
+    {{ output_arg }} = executioner({{ args }});
+{% endmacro %}

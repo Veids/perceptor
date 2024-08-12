@@ -1,0 +1,11 @@
+{% if section == "globals" %}
+    HMODULE hNtdll = NULL;
+    LPVOID spoofJump = NULL;
+
+    void prepare_syscalls(){
+        hNtdll = hlpGetModuleHandle(L"ntdll.dll");
+        spoofJump = ((char*)hlpGetProcAddress(hNtdll, "NtAddBootEntry")) + 18; 
+    }
+{% else %}
+    prepare_syscalls();
+{% endif %}

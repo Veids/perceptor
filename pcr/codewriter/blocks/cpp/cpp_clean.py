@@ -1,9 +1,9 @@
 from typing import ClassVar
 
-from pcr.lib.link import BaseBlock
+from pcr.lib.link import CPPBaseBlock
 
 
-class cpp_clean(BaseBlock):
+class cpp_clean(CPPBaseBlock):
     yaml_tag: ClassVar[str] = "!cpp.clean"
 
     variable: str

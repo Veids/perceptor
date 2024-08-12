@@ -163,10 +163,15 @@ class ShellcodeMutator(Link):
         self.output = self.deduce_artifact()
         print(f"    [bold blue]>[/bold blue] Seed: {self.seed}")
 
-        if self.input.output.type == ArtifactType.OBJECT:
-            self.process_object()
-        else:
-            raise NotImplementedError()
+        match self.input.output.type:
+            case ArtifactType.OBJECT:
+                self.process_object()
+
+            case ArtifactType.RAW:
+                raise NotImplementedError()
+
+            case _:
+                raise NotImplementedError()
 
     def info(self) -> str:
         return "Mutate shellcode"

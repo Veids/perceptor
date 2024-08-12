@@ -1,11 +1,12 @@
 from enum import Enum
 from typing import ClassVar
 
-from pcr.lib.link import BaseBlock
+from pcr.lib.link import CPPBaseBlock
 
 
 class AllocMethodEnum(str, Enum):
     basic = "basic"
+    basic_syscalls = "basic_syscalls"
     sections = "sections"
 
 
@@ -14,7 +15,7 @@ class ProtectionEnum(str, Enum):
     rwx = "rwx"
 
 
-class cpp_alloc(BaseBlock):
+class cpp_alloc(CPPBaseBlock):
     yaml_tag: ClassVar[str] = "!cpp.alloc"
 
     method: AllocMethodEnum
