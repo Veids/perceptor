@@ -1,3 +1,5 @@
+{% from "macros.jinja" import function_typedef, function_definition, createThreadStub with context %}
+
 {% if section == "globals" %}
     {{ function_typedef("SuspendThread") }}
     {{ function_typedef("GetThreadContext") }}

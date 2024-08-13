@@ -11,7 +11,7 @@ class WhereEnum(str, Enum):
 
 
 class CreateThreadStub(Link):
-    yaml_tag: ClassVar[str] = u"!modifier.CreateThreadStub"
+    yaml_tag: ClassVar[str] = "!modifier.CreateThreadStub"
     where: WhereEnum
 
     def deduce_artifact(self) -> Artifact:

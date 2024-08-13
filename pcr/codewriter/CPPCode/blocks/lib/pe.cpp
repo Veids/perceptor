@@ -1,5 +1,6 @@
-{% if PEINCLUDED is not defined %}
-{% set PEINCLUDED = 1 %}
+#ifndef PEINCLUDED
+#define PEINCLUDED
+
 #include <ntdef.h>
 //https://processhacker.sourceforge.io/doc/ntpsapi_8h_source.html#l00063
 struct PEB_LDR_DATA
@@ -58,4 +59,4 @@ struct LDR_DATA_TABLE_ENTRY
 	UNICODE_STRING BaseDllName;
 	//...
 };
-{% endif %}
+#endif

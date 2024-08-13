@@ -1,0 +1,8 @@
+{% from "macros.jinja" import syscall_call, createThreadStub with context %}
+
+{% if section == "globals" %}
+    {% include "lib/sections_syscalls.jinja" %}
+{% else %}
+    HANDLE hProc = GetCurrentProcess();
+    void *mem = alloc(hProc, hProc, raw, length);
+{% endif %}

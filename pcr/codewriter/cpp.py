@@ -8,7 +8,7 @@ from pydantic import InstanceOf, BaseModel
 
 from pcr.lib.artifact import Artifact, ArtifactType
 from pcr.lib.link import CPPBaseBlock, Link, EncoderLink
-# from pcr.modifier.CreateThreadStub import CreateThreadStub
+from pcr.modifier import CreateThreadStub
 
 STACK_SIZE_WARNING = 1024 * 16
 
@@ -100,11 +100,16 @@ class cpp(Link):
                     {"name": link.__class__.__name__, "decoder_data": link.decoder_data}
                 )
 
+        stub = None
+        for link in reversed(self.links):
+           if isinstance(link, CreateThreadStub):
+               stub = link
+
         definitions = []
         code = []
         for block in self.blocks:
             block.input = self
-            d, c = block.process(link=self)
+            d, c = block.process(link=self, stub=stub)
             definitions.append(d)
             code.append(c)
             self.obj.linker_args += block.linker_args
@@ -117,6 +122,7 @@ class cpp(Link):
                 link=self,
                 definitions="\n".join(definitions),
                 code="\n".join(code),
+                stub = stub,
             ).encode()
         )
 

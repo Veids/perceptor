@@ -1,5 +1,5 @@
-{% if FUNCTIONRESOLVEINCLUDED is not defined %}
-{% set FUNCTIONRESOLVEINCLUDED = 1 %}
+#ifndef FUNCTIONRESOLVEINCLUDED
+#define FUNCTIONRESOLVEINCLUDED
 {% include "blocks/lib/pe.cpp" %}
 
 typedef HMODULE (WINAPI * LoadLibrary_t)(LPCSTR lpFileName);
@@ -115,4 +115,4 @@ FARPROC WINAPI hlpGetProcAddress(HMODULE hMod, char * sProcName) {
 
 	return (FARPROC) pProcAddr;
 }
-{% endif %}
+#endif

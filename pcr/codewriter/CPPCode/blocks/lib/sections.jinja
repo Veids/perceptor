@@ -39,7 +39,7 @@
         {% endif %}
 
         {% if stub and stub.yaml_tag == "!modifier.CreateThreadStub" %}
-            {{ createThreadStub("local", "mem", "pRemoteView") }}
+            {{ createThreadStub("mem", "pRemoteView") }}
             pNtUnmapViewOfSection(hSelfProc, mem);
         {% endif %}
 

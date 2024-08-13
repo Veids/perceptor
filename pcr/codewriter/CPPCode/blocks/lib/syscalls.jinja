@@ -1,5 +1,6 @@
-{% if SYSCALLSINCLUDED is not defined %}
-{% set SYSCALLSINCLUDED = 1 %}
+#ifndef SYSCALLSINCLUDED
+#define SYSCALLSINCLUDED
+
 extern "C" VOID setup(DWORD id, LPVOID jmptofake);
 extern "C" NTSTATUS executioner(...);
 
@@ -103,4 +104,4 @@ BOOL GetSyscallId(PVOID pModuleBase, DWORD* SyscallId, PCHAR fnctolookfor) {
 
 	return TRUE;
 }
-{% endif %}
+#endif

