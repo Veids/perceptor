@@ -571,3 +571,4 @@ Get an argument from cmdline
 * [https://github.com/klezVirus/inceptor](inceptor)
 * [https://github.com/PowerShellMafia/PowerSploit](PowerSploit)
 * [https://github.com/caueb/Mockingjay](MockingJay)
+* [https://github.com/nettitude/Tartarus-TpAllocInject](Tartarus-TpAllocInject)
