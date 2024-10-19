@@ -101,8 +101,8 @@ class MetadataDB(Link):
                 version_directory_config = json.dumps(version_directory_config)
                 pe_type = self.version.obj["pe_type"]
                 assemblyInfo = self.version.obj["assemblyInfo"]
-                originalFilename = assemblyInfo["OriginalFilename"]
-                assemblyInfo = json.dumps(assemblyInfo)
+                originalFilename = assemblyInfo.OriginalFilename
+                assemblyInfo = assemblyInfo.json()
                 if assemblyAttributes := self.version.obj["assemblyAttributes"]:
                     assemblyAttributes = json.dumps(assemblyAttributes)
             elif self.version.exists():
