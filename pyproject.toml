@@ -16,7 +16,7 @@ perceptor = "pcr.perceptor:main"
 pcr = "pcr.perceptor:main"
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.13"
+python = ">=3.11,<3.14"
 rich = "^13.7.1"
 lief = "^0.14.1"
 keystone-engine = "^0.9.2"
