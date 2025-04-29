@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Optional
 from pydantic import BaseModel
 from pathlib import Path
 from enum import Enum

@@ -36,5 +36,5 @@ class YamlFuck:
 class MainConfig(BaseModel, YamlFuck):
     yaml_tag: ClassVar[str] = "!MainConfig"
     tmp: Path
-    cecil: Optional[FilePath]
-    automation: Optional[FilePath]
+    cecil: Optional[FilePath] = None
+    automation: Optional[FilePath] = None

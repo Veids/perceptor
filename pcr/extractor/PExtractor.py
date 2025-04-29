@@ -30,7 +30,7 @@ class AssemblyInfoObj(BaseModel):
 
 
 class PExtractor(Link):
-    yaml_tag: ClassVar[str] = u"!extractor.PExtractor"
+    yaml_tag: ClassVar[str] = "!extractor.PExtractor"
     target: FilePath
     entity: EntityEnum
 
@@ -47,14 +47,21 @@ class PExtractor(Link):
             extension = "txt"
 
         return Artifact(
-            type = ArtifactType.RAW,
-            os = ArtifactOS.UNKNOWN,
-            arch = ArtifactArch.UNKNOWN,
-            path = str(self.config["main"].tmp / f"stage.{self.id}.{extension}"),
+            type=ArtifactType.RAW,
+            os=ArtifactOS.UNKNOWN,
+            arch=ArtifactArch.UNKNOWN,
+            path=str(self.config["main"].tmp / f"stage.{self.id}.{extension}"),
         )
 
     def is_dotnet(self, target):
-        clr_header = next(iter(filter(lambda e: e.type == lief.PE.DataDirectory.TYPES.CLR_RUNTIME_HEADER, target.data_directories)))
+        clr_header = next(
+            iter(
+                filter(
+                    lambda e: e.type == lief.PE.DataDirectory.TYPES.CLR_RUNTIME_HEADER,
+                    target.data_directories,
+                )
+            )
+        )
         if clr_header.rva == 0 and clr_header.size == 0:
             return False
         return True
@@ -70,7 +77,7 @@ class PExtractor(Link):
                 "Copyright": ai.get("LegalCopyright", b"").decode(),
                 "Version": ai.get("ProductVersion", b"").decode(),
                 "FileVersion": ai.get("FileVersion", b"").decode(),
-                "OriginalFilename": ai["OriginalFilename"].decode()
+                "OriginalFilename": ai["OriginalFilename"].decode(),
             }
         )
         return assemblyInfo
@@ -80,6 +87,7 @@ class PExtractor(Link):
             return None
 
         import clr
+
         clr.AddReference(str(self.config["main"].cecil))
         import Mono.Cecil
 
@@ -104,7 +112,7 @@ class PExtractor(Link):
             "Version": attrs.get("AssemblyFileVersionAttribute", ""),
             "FileVersion": attrs.get("AssemblyFileVersionAttribute", ""),
             "Guid": attrs["GuidAttribute"],
-            "Mvid": target.MainModule.Mvid.ToString()
+            "Mvid": target.MainModule.Mvid.ToString(),
         }
 
         return assemblyAttributes
@@ -112,9 +120,7 @@ class PExtractor(Link):
     def extract_exports(self, target):
         if target.has_exports:
             names = [x.name for x in target.exported_functions]
-            self.obj = {
-                "exports": names
-            }
+            self.obj = {"exports": names}
             self.output.path.write_text("\n".join(names))
 
     def process(self):
@@ -143,7 +149,7 @@ class PExtractor(Link):
                     with Image(filename=temp_icon) as elem:
                         ico.sequence.append(elem)
 
-                ico.save(filename = self.output.path)
+                ico.save(filename=self.output.path)
         elif self.entity == EntityEnum.manifest:
             if not target.resources_manager.has_manifest:
                 if self.do_raise:
@@ -159,11 +165,18 @@ class PExtractor(Link):
             if assembly is not None:
                 if assemblyIdentity := assembly.get("assemblyIdentity"):
                     for k, v in assemblyIdentity.items():
-                        self.obj[k.replace('@', '')] = v
+                        self.obj[k.replace("@", "")] = v
 
                 self.obj["description"] = assembly.get("description")
 
-            manifest_node = next(iter(filter(lambda e: e.id == lief.PE.ResourcesManager.TYPE.MANIFEST.value, target.resources.childs)))
+            manifest_node = next(
+                iter(
+                    filter(
+                        lambda e: e.id == lief.PE.ResourcesManager.TYPE.MANIFEST.value,
+                        target.resources.childs,
+                    )
+                )
+            )
             id_node = manifest_node.childs[0]
             lang_node = id_node.childs[0]
 
@@ -176,7 +189,7 @@ class PExtractor(Link):
                 "id_node": {
                     "major_version": id_node.major_version,
                     "minor_version": id_node.minor_version,
-                }
+                },
             }
 
             self.output.write(manifest.encode())
@@ -187,7 +200,14 @@ class PExtractor(Link):
                 else:
                     return
 
-            version_node = next(iter(filter(lambda e: e.id == lief.PE.ResourcesManager.TYPE.VERSION.value, target.resources.childs)))
+            version_node = next(
+                iter(
+                    filter(
+                        lambda e: e.id == lief.PE.ResourcesManager.TYPE.VERSION.value,
+                        target.resources.childs,
+                    )
+                )
+            )
             id_node = version_node.childs[0]
             lang_node = id_node.childs[0]
 
@@ -198,7 +218,9 @@ class PExtractor(Link):
 
             assemblyAttributes = None
             if pe_type == "net":
-                print("    [bold blue]>[/bold blue] Trying cecil for assemblyAttributes/Mvid retrival...")
+                print(
+                    "    [bold blue]>[/bold blue] Trying cecil for assemblyAttributes/Mvid retrival..."
+                )
                 assemblyAttributes = self.get_assembly_info_cecil()
 
             print("    [bold blue]>[/bold blue] Using lief to get assemblyInfo")

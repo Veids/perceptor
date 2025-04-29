@@ -102,8 +102,8 @@ class cpp(Link):
 
         stub = None
         for link in reversed(self.links):
-           if isinstance(link, CreateThreadStub):
-               stub = link
+            if isinstance(link, CreateThreadStub):
+                stub = link
 
         definitions = []
         code = []
@@ -122,7 +122,7 @@ class cpp(Link):
                 link=self,
                 definitions="\n".join(definitions),
                 code="\n".join(code),
-                stub = stub,
+                stub=stub,
             ).encode()
         )
 

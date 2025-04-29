@@ -19,7 +19,7 @@ class WhereEnum(str, Enum):
 
 
 class RNDOpcodes(EncoderLink):
-    yaml_tag: ClassVar[str] = u"!modifier.RNDOpcodes"
+    yaml_tag: ClassVar[str] = "!modifier.RNDOpcodes"
     n: str
     where: WhereEnum
     seed: int = Field(default_factory=lambda: randrange(sys.maxsize))
@@ -33,10 +33,10 @@ class RNDOpcodes(EncoderLink):
 
     def deduce_artifact(self) -> Artifact:
         return Artifact(
-            type = ArtifactType.RAW,
-            os = self.input.output.os,
-            arch = self.input.output.arch,
-            path = str(self.config["main"].tmp / f"stage.{self.id}.bin"),
+            type=ArtifactType.RAW,
+            os=self.input.output.os,
+            arch=self.input.output.arch,
+            path=str(self.config["main"].tmp / f"stage.{self.id}.bin"),
         )
 
     def generate_opcodes(self):
@@ -63,7 +63,7 @@ class RNDOpcodes(EncoderLink):
         ]
 
         if "-" in self.n:
-            start, end = self.n.split('-')
+            start, end = self.n.split("-")
             n = rng.randint(int(start), int(end))
         else:
             n = int(self.n)
@@ -78,7 +78,7 @@ class RNDOpcodes(EncoderLink):
             instructions = x86_instructions + x64_instructions
             ks = Ks(KS_ARCH_X86, KS_MODE_64)
 
-        scope = rng.choices(instructions, k = n)
+        scope = rng.choices(instructions, k=n)
         for inst in scope:
             if "{" in inst:
                 bytecode, _ = ks.asm(inst.format(rng.randint(0, 0xFFFFFFFF)))

@@ -1,4 +1,3 @@
-import sys
 import subprocess
 import xml.dom.minidom
 
@@ -14,7 +13,7 @@ from pcr.lib.artifact import Artifact, ArtifactType
 
 
 class LLVMPassConfig(BaseModel, YamlFuck):
-    yaml_tag: ClassVar[str] = u"!compiler.LLVMPassConfig"
+    yaml_tag: ClassVar[str] = "!compiler.LLVMPassConfig"
     assembler: FilePath
     clang: FilePath
     clangpp: FilePath
@@ -27,7 +26,7 @@ class FilesEnum(str, Enum):
 
 
 class LLVMPass(Link):
-    yaml_tag: ClassVar[str] = u"!compiler.LLVMPass"
+    yaml_tag: ClassVar[str] = "!compiler.LLVMPass"
     icon: Optional[FilePath | InstanceOf[Link] | bytes | Obj] = None
     manifest: Optional[FilePath | InstanceOf[Link]] = None
     linker_args: List[str] | Obj = list()
@@ -53,10 +52,10 @@ class LLVMPass(Link):
             out_name = self.out_name
 
         return Artifact(
-            type = ArtifactType.PE,
-            os = self.input.output.os,
-            arch = self.input.output.arch,
-            path = str(self.config["main"].tmp / out_name),
+            type=ArtifactType.PE,
+            os=self.input.output.os,
+            arch=self.input.output.arch,
+            path=str(self.config["main"].tmp / out_name),
         )
 
     def llvm_ir_args(self):
@@ -70,7 +69,8 @@ class LLVMPass(Link):
             "-lpsapi",
             "-lntdll",
             "-Wl,--subsystem,console",
-            "-Xclang", "-flto-visibility-public-std"
+            "-Xclang",
+            "-flto-visibility-public-std",
         ] + self.linker_args
 
     def clang_args(self):
@@ -83,24 +83,27 @@ class LLVMPass(Link):
             "-lpsapi",
             "-lntdll",
             "-Wl,--subsystem,console",
-            "-Xclang", "-flto-visibility-public-std"
+            "-Xclang",
+            "-flto-visibility-public-std",
         ] + self.linker_args
 
     def dll_args(self):
         return ["-shared"] if self.dll else []
 
     def clang_emit_args(self):
-        return [
-            "-S",
-            "-emit-llvm"
-        ]
+        return ["-S", "-emit-llvm"]
 
     def direct_pass_args(self):
         plugin_path = str(self.config["compiler"]["LLVMPass"].plugin)
         return [
-            "-Xclang", f"-fpass-plugin={plugin_path}",
-            "-Xclang", "-load", "-Xclang", plugin_path,
-            "-mllvm", f"--pass-order='{self.passes}'"
+            "-Xclang",
+            f"-fpass-plugin={plugin_path}",
+            "-Xclang",
+            "-load",
+            "-Xclang",
+            plugin_path,
+            "-mllvm",
+            f"--pass-order='{self.passes}'",
         ]
 
     @staticmethod
@@ -119,10 +122,7 @@ class LLVMPass(Link):
 
     def generate_llvm_ir(self):
         for i, source in enumerate(self.sources):
-            clang_cmd = [
-                str(self.get_compiler()),
-                str(source)
-            ]
+            clang_cmd = [str(self.get_compiler()), str(source)]
             clang_cmd += self.llvm_ir_args()
             clang_cmd += self.clang_emit_args()
 
@@ -131,22 +131,18 @@ class LLVMPass(Link):
             rprint("    [bold green]>[/bold green] Obtaining LLVM IR")
             rprint(f"    [bold green]>[/bold green] {' '.join(clang_cmd)}")
 
-            stdout = LLVMPass.subprocess_wrap(clang_cmd, stderr = subprocess.STDOUT)
+            stdout = LLVMPass.subprocess_wrap(clang_cmd, stderr=subprocess.STDOUT)
             print(stdout.decode())
 
     def link(self):
-        link_cmd = [
-            "llvm-link",
-            "-S",
-            "-v"
-        ]
+        link_cmd = ["llvm-link", "-S", "-v"]
         link_cmd += [f"{self.output.path}.{i}.ll" for i in range(len(self.sources))]
         link_cmd += ["-o", f"{self.output.path}.ll"]
 
         rprint("    [bold green]>[/bold green] Linking LLVM IR")
         rprint(f"    [bold green]>[/bold green] {' '.join(link_cmd)}")
 
-        stdout = LLVMPass.subprocess_wrap(link_cmd, stderr = subprocess.STDOUT)
+        stdout = LLVMPass.subprocess_wrap(link_cmd, stderr=subprocess.STDOUT)
         print(stdout.decode())
 
     def opt_pass(self):
@@ -154,16 +150,17 @@ class LLVMPass(Link):
             "opt",
             "-load-pass-plugin",
             str(self.config["compiler"]["LLVMPass"].plugin),
-            f"-passes=\"{self.passes}\"",
+            f'-passes="{self.passes}"',
             f"{self.output.path}.ll",
-            "-o", f"{self.output.path}.bc"
+            "-o",
+            f"{self.output.path}.bc",
         ]
         opt_cmd = " ".join(opt_cmd)
 
         rprint("    [bold green]>[/bold green] Running passes on the obtained LLVM IR")
         rprint(f"    [bold green]>[/bold green] {opt_cmd}")
 
-        stdout = LLVMPass.subprocess_wrap(opt_cmd, stderr = subprocess.STDOUT, shell = True)
+        stdout = LLVMPass.subprocess_wrap(opt_cmd, stderr=subprocess.STDOUT, shell=True)
         print(stdout.decode())
 
     def build_resource(self, input, output):
@@ -173,12 +170,16 @@ class LLVMPass(Link):
         windres_cmd = [
             str(self.config["compiler"]["LLVMPass"].windres),
             input,
-            "-O", "coff",
-            "-o", output
+            "-O",
+            "coff",
+            "-o",
+            output,
         ]
         windres_cmd = " ".join(windres_cmd)
         rprint(f"    [bold green]>[/bold green] {windres_cmd}")
-        return LLVMPass.subprocess_wrap(windres_cmd, stderr = subprocess.STDOUT, shell = True)
+        return LLVMPass.subprocess_wrap(
+            windres_cmd, stderr=subprocess.STDOUT, shell=True
+        )
 
     def generate_icon(self):
         if self.icon is not None:
@@ -195,7 +196,7 @@ class LLVMPass(Link):
 
             icon_rc_path = str(self.config["main"].tmp / "icon.rc")
             with open(icon_rc_path, "w") as f:
-                f.write(f"id ICON \"{icon_path}\"")
+                f.write(f'id ICON "{icon_path}"')
 
             icon_res_path = str(self.config["main"].tmp / "icon.res")
 
@@ -243,7 +244,9 @@ END
 
         if self.version_info is not None:
             if not self.version_info.exists():
-                raise AttributeError(f"Version info file {self.version_info} doesn't exist")
+                raise AttributeError(
+                    f"Version info file {self.version_info} doesn't exist"
+                )
 
             version_info_res_path = str(self.config["main"].tmp / "version_info.res")
 
@@ -265,7 +268,7 @@ END
 
             manifest_rc_path = str(self.config["main"].tmp / "manifest.rc")
             with open(manifest_rc_path, "w") as f:
-                f.write(f"1 24 \"{manifest_path}\"")
+                f.write(f'1 24 "{manifest_path}"')
 
             manifest_res_path = str(self.config["main"].tmp / "manifest.res")
 
@@ -285,15 +288,14 @@ END
 
         text = ""
         for export in exports:
-            text += f"extern \"C\" __declspec(dllexport) bool {export}" + "(){return true;}\n"
+            text += (
+                f'extern "C" __declspec(dllexport) bool {export}' + "(){return true;}\n"
+            )
         exports_path = self.config["main"].tmp / f"stage.{self.id}.exports.cpp"
         exports_path.write_text(text)
         exports_out_path = str(self.config["main"].tmp / f"stage.{self.id}.exports.o")
 
-        clang_cmd = [
-            str(self.get_compiler()),
-            str(exports_path)
-        ]
+        clang_cmd = [str(self.get_compiler()), str(exports_path)]
         clang_cmd += self.llvm_ir_args()
         clang_cmd += ["-c"]
         clang_cmd += ["-o", exports_out_path]
@@ -301,7 +303,7 @@ END
         rprint(f"    [bold green]>[/bold green] Generating exports ({len(exports)})")
         rprint(f"    [bold green]>[/bold green] {' '.join(clang_cmd)}")
 
-        stdout = LLVMPass.subprocess_wrap(clang_cmd, stderr = subprocess.STDOUT)
+        stdout = LLVMPass.subprocess_wrap(clang_cmd, stderr=subprocess.STDOUT)
         print(stdout.decode())
 
         self.resources.append(exports_out_path)
@@ -319,10 +321,7 @@ END
         self.convert_resources_links()
 
     def clang_compile(self):
-        clang_cmd = [
-            str(self.get_compiler()),
-            f"{self.output.path}.bc"
-        ]
+        clang_cmd = [str(self.get_compiler()), f"{self.output.path}.bc"]
         clang_cmd += self.clang_args()
         clang_cmd += self.dll_args()
         clang_cmd += self.resources
@@ -332,7 +331,9 @@ END
         rprint("    [bold green]>[/bold green] Compiling...")
         rprint(f"    [bold green]>[/bold green] {clang_cmd}")
 
-        stdout = LLVMPass.subprocess_wrap(clang_cmd, stderr = subprocess.STDOUT, shell=True)
+        stdout = LLVMPass.subprocess_wrap(
+            clang_cmd, stderr=subprocess.STDOUT, shell=True
+        )
         print(stdout.decode())
 
     def preprocess(self):
@@ -343,7 +344,9 @@ END
                 self.sources = [str(self.input.output.path / "main.cpp")]
         else:
             if self.input.output.path.is_file():
-                raise ValueError("You should specify directory in order to support multi-file compilation")
+                raise ValueError(
+                    "You should specify directory in order to support multi-file compilation"
+                )
 
             if self.files == FilesEnum.all:
                 self.sources += [str(x) for x in self.input.output.path.rglob("*.cpp")]
@@ -353,9 +356,7 @@ END
                     self.sources.append(str(self.input.output.path / file))
 
     def clang_compile_direct(self):
-        clang_cmd = [
-            str(self.get_compiler())
-        ]
+        clang_cmd = [str(self.get_compiler())]
 
         clang_cmd += self.sources
         clang_cmd += self.direct_pass_args()
@@ -368,7 +369,9 @@ END
         rprint("    [bold green]>[/bold green] Compiling...")
         rprint(f"    [bold green]>[/bold green] {clang_cmd}")
 
-        stdout = LLVMPass.subprocess_wrap(clang_cmd, stderr = subprocess.STDOUT, shell =True)
+        stdout = LLVMPass.subprocess_wrap(
+            clang_cmd, stderr=subprocess.STDOUT, shell=True
+        )
         print(stdout.decode())
 
     def process(self):

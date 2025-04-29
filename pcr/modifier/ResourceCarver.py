@@ -9,7 +9,7 @@ from pcr.lib.link import Link, Obj
 
 
 class ResourceCarver(Link):
-    yaml_tag: ClassVar[str] = u"!modifier.ResourceCarver"
+    yaml_tag: ClassVar[str] = "!modifier.ResourceCarver"
     version: Optional[bytes | Obj] = None
     version_directory_config: Optional[dict | Obj] = None
     icon: Optional[FilePath | Obj] = None
@@ -20,10 +20,10 @@ class ResourceCarver(Link):
 
     def deduce_artifact(self) -> Artifact:
         return Artifact(
-            type = self.input.output.type,
-            os = self.input.output.os,
-            arch = self.input.output.arch,
-            path = str(self.config["main"].tmp / f"stage.{self.id}.exe"),
+            type=self.input.output.type,
+            os=self.input.output.os,
+            arch=self.input.output.arch,
+            path=str(self.config["main"].tmp / f"stage.{self.id}.exe"),
         )
 
     def carve_version_info(self, input_binary):
@@ -31,7 +31,14 @@ class ResourceCarver(Link):
             return
 
         if input_binary.resources_manager.has_version:
-            version_node = next(iter(filter(lambda e: e.id == lief.PE.ResourcesManager.TYPE.VERSION.value, input_binary.resources.childs)))
+            version_node = next(
+                iter(
+                    filter(
+                        lambda e: e.id == lief.PE.ResourcesManager.TYPE.VERSION.value,
+                        input_binary.resources.childs,
+                    )
+                )
+            )
             id_node = version_node.childs[0]
             lang_node = id_node.childs[0]
             lang_node.content = memoryview(self.version)
@@ -54,12 +61,22 @@ class ResourceCarver(Link):
 
         if self.version_directory_config:
             lang_node.code_page = self.version_directory_config["code_page"]
-            version_node.major_version = self.version_directory_config["directory_node"]["major_version"]
-            version_node.minor_version = self.version_directory_config["directory_node"]["minor_version"]
-            id_node.major_version = self.version_directory_config["id_node"]["major_version"]
-            id_node.minor_version = self.version_directory_config["id_node"]["minor_version"]
+            version_node.major_version = self.version_directory_config[
+                "directory_node"
+            ]["major_version"]
+            version_node.minor_version = self.version_directory_config[
+                "directory_node"
+            ]["minor_version"]
+            id_node.major_version = self.version_directory_config["id_node"][
+                "major_version"
+            ]
+            id_node.minor_version = self.version_directory_config["id_node"][
+                "minor_version"
+            ]
 
-        print(f"    [bold blue]>[/bold blue] Carved version:\n{input_binary.resources_manager.version}")
+        print(
+            f"    [bold blue]>[/bold blue] Carved version:\n{input_binary.resources_manager.version}"
+        )
 
     def carve_icon(self, input_binary):
         if not self.icon:

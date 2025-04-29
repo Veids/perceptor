@@ -15,17 +15,17 @@ class ActionEnum(str, Enum):
 
 
 class SigThief(Link):
-    yaml_tag: ClassVar[str] = u"!signer.SigThief"
+    yaml_tag: ClassVar[str] = "!signer.SigThief"
     target: Optional[FilePath | bytes | Obj]
     action: ActionEnum
 
     def deduce_artifact(self) -> Artifact:
         extension = "exe" if self.action == ActionEnum.write else "sig"
         return Artifact(
-            type = self.input.output.type,
-            os = self.input.output.os,
-            arch = self.input.output.arch,
-            path = self.config["main"].tmp / f"stage.{self.id}.{extension}",
+            type=self.input.output.type,
+            os=self.input.output.os,
+            arch=self.input.output.arch,
+            path=self.config["main"].tmp / f"stage.{self.id}.{extension}",
         )
 
     def process(self):

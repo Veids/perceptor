@@ -7,16 +7,16 @@ from pcr.lib.link import Link
 
 
 class StringReplace(Link):
-    yaml_tag: ClassVar[str] = u"!modifier.StringReplace"
+    yaml_tag: ClassVar[str] = "!modifier.StringReplace"
     regex: str
     replacement: str
 
     def deduce_artifact(self) -> Artifact:
         return Artifact(
-            type = self.input.output.type,
-            os = self.input.output.os,
-            arch = self.input.output.arch,
-            path = str(self.config["main"].tmp / f"stage.{self.id}.exe"),
+            type=self.input.output.type,
+            os=self.input.output.os,
+            arch=self.input.output.arch,
+            path=str(self.config["main"].tmp / f"stage.{self.id}.exe"),
         )
 
     def process(self):

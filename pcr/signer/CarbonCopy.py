@@ -16,7 +16,7 @@ from pcr.lib.artifact import Artifact
 
 
 class CarbonCopy(Link):
-    yaml_tag: ClassVar[str] = u"!signer.CarbonCopy"
+    yaml_tag: ClassVar[str] = "!signer.CarbonCopy"
     url_description: AnyHttpUrl | Obj
     description: str | Obj
     timestamp_url: AnyHttpUrl | Obj
@@ -25,10 +25,10 @@ class CarbonCopy(Link):
 
     def deduce_artifact(self) -> Artifact:
         return Artifact(
-            type = self.input.output.type,
-            os = self.input.output.os,
-            arch = self.input.output.arch,
-            path = str(self.config["main"].tmp / f"stage.{self.id}.exe"),
+            type=self.input.output.type,
+            os=self.input.output.os,
+            arch=self.input.output.arch,
+            path=str(self.config["main"].tmp / f"stage.{self.id}.exe"),
         )
 
     def process(self):
@@ -64,12 +64,14 @@ class CarbonCopy(Link):
         cert.set_notAfter(x509.get_notAfter())
         cert.set_pubkey(k)
         print("[+] Signing Keys")
-        cert.sign(k, 'sha256')
+        cert.sign(k, "sha256")
 
         print("[+] Creating %s and %s" % (CNCRT, CNKEY))
         CNCRT.write_bytes(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
         CNKEY.write_bytes(crypto.dump_privatekey(crypto.FILETYPE_PEM, k))
-        print("[+] Clone process completed. Creating PFX file for signing executable...")
+        print(
+            "[+] Clone process completed. Creating PFX file for signing executable..."
+        )
 
         try:
             pfx = crypto.PKCS12()
@@ -89,18 +91,44 @@ class CarbonCopy(Link):
             print("[+] Signing %s with signtool.exe..." % signed)
             shutil.copy(signee, signed)
             subprocess.check_call(
-                ["signtool.exe", "sign", "/v", "/f", str(PFXFILE),
-                "/d", "MozDef Corp", "/tr", str(self.timestamp_url),
-                "/td", "SHA256", "/fd", "SHA256", signed]
+                [
+                    "signtool.exe",
+                    "sign",
+                    "/v",
+                    "/f",
+                    str(PFXFILE),
+                    "/d",
+                    "MozDef Corp",
+                    "/tr",
+                    str(self.timestamp_url),
+                    "/td",
+                    "SHA256",
+                    "/fd",
+                    "SHA256",
+                    signed,
+                ]
             )
 
         else:
             print("[+] Platform is Linux OS...")
             print("[+] Signing %s with %s using osslsigncode..." % (signee, PFXFILE))
-            args = ("osslsigncode", "sign", "-pkcs12", str(PFXFILE),
-                    "-n", self.description, "-i", str(self.url_description), "-ts", str(self.timestamp_url),
-                    "-in", signee, "-out", signed)
-            print("[+] ", end='', flush=True)
+            args = (
+                "osslsigncode",
+                "sign",
+                "-pkcs12",
+                str(PFXFILE),
+                "-n",
+                self.description,
+                "-i",
+                str(self.url_description),
+                "-ts",
+                str(self.timestamp_url),
+                "-in",
+                signee,
+                "-out",
+                signed,
+            )
+            print("[+] ", end="", flush=True)
             subprocess.check_call(args)
 
     def info(self):

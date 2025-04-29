@@ -8,16 +8,16 @@ from pcr.lib.link import Link, Obj
 
 
 class MvidInjector(Link):
-    yaml_tag: ClassVar[str] = u"!modifier.MvidInjector"
+    yaml_tag: ClassVar[str] = "!modifier.MvidInjector"
 
     mvid: Optional[str | Obj] = str(uuid.uuid4())
 
     def deduce_artifact(self) -> Artifact:
         return Artifact(
-            type = self.input.output.type,
-            os = self.input.output.os,
-            arch = self.input.output.arch,
-            path = str(self.config["main"].tmp / f"stage.{self.id}.exe"),
+            type=self.input.output.type,
+            os=self.input.output.os,
+            arch=self.input.output.arch,
+            path=str(self.config["main"].tmp / f"stage.{self.id}.exe"),
         )
 
     def process(self):
@@ -25,6 +25,7 @@ class MvidInjector(Link):
 
         print(f"    [bold blue]>[/bold blue] Injecting Mvid: {self.mvid}")
         import clr
+
         clr.AddReference(str(self.config["main"].cecil))
         import Mono.Cecil
         import System

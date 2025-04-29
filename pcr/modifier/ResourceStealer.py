@@ -15,7 +15,7 @@ class StealEnum(str, Enum):
 
 
 class ResourceStealer(Link):
-    yaml_tag: ClassVar[str] = u"!modifier.ResourceStealer"
+    yaml_tag: ClassVar[str] = "!modifier.ResourceStealer"
     target: FilePath
     steal: List[StealEnum]
 
@@ -25,10 +25,10 @@ class ResourceStealer(Link):
 
     def deduce_artifact(self) -> Artifact:
         return Artifact(
-            type = self.input.output.type,
-            os = self.input.output.os,
-            arch = self.input.output.arch,
-            path = str(self.config["main"].tmp / f"stage.{self.id}.exe"),
+            type=self.input.output.type,
+            os=self.input.output.os,
+            arch=self.input.output.arch,
+            path=str(self.config["main"].tmp / f"stage.{self.id}.exe"),
         )
 
     def steal_version_info(self, input_binary, target_binary):
@@ -40,12 +40,26 @@ class ResourceStealer(Link):
 
         print(f"    [bold blue]>[/bold blue] Stealing version:\n{target_rm.version}")
 
-        version_node = next(iter(filter(lambda e: e.id == lief.PE.ResourcesManager.TYPE.VERSION.value, target_binary.resources.childs)))
+        version_node = next(
+            iter(
+                filter(
+                    lambda e: e.id == lief.PE.ResourcesManager.TYPE.VERSION.value,
+                    target_binary.resources.childs,
+                )
+            )
+        )
         id_node = version_node.childs[0]
         lang_node = id_node.childs[0]
 
         if input_rm.has_version:
-            version_node_input = next(iter(filter(lambda e: e.id == lief.PE.ResourcesManager.TYPE.VERSION.value, input_binary.resources.childs)))
+            version_node_input = next(
+                iter(
+                    filter(
+                        lambda e: e.id == lief.PE.ResourcesManager.TYPE.VERSION.value,
+                        input_binary.resources.childs,
+                    )
+                )
+            )
             id_node_input = version_node_input.childs[0]
             lang_node_input = id_node_input.childs[0]
             lang_node_input.content = lang_node.content
@@ -61,12 +75,26 @@ class ResourceStealer(Link):
 
         print(f"    [bold blue]>[/bold blue] Stealing manifest:\n{target_rm.manifest}")
 
-        manifest_node = next(iter(filter(lambda e: e.id == lief.PE.ResourcesManager.TYPE.MANIFEST.value, target_binary.resources.childs)))
+        manifest_node = next(
+            iter(
+                filter(
+                    lambda e: e.id == lief.PE.ResourcesManager.TYPE.MANIFEST.value,
+                    target_binary.resources.childs,
+                )
+            )
+        )
         id_node = manifest_node.childs[0]
         lang_node = id_node.childs[0]
 
         if input_rm.has_manifest:
-            manifest_node_input = next(iter(filter(lambda e: e.id == lief.PE.ResourcesManager.TYPE.MANIFEST.value, input_binary.resources.childs)))
+            manifest_node_input = next(
+                iter(
+                    filter(
+                        lambda e: e.id == lief.PE.ResourcesManager.TYPE.MANIFEST.value,
+                        input_binary.resources.childs,
+                    )
+                )
+            )
             id_node_input = manifest_node_input.childs[0]
             lang_node_input = id_node_input.childs[0]
             lang_node_input.content = lang_node.content

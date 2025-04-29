@@ -1,0 +1,8 @@
+chain: !Chain
+  links:
+    - !stdin
+      name: Stdin
+
+    - !converter.Donut
+      name: Print donut payload configuration
+      cmd: obfuscate

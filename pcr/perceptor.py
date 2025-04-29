@@ -125,13 +125,10 @@ YAML_CHAIN = [
     Chain,
     Stdin,
     Obj,
-
     # Misc
     Command,
-
     # Converters
     Donut,
-
     # Modifiers
     XOREncode,
     RNDOpcodes,
@@ -143,10 +140,8 @@ YAML_CHAIN = [
     MvidInjector,
     PSCommentRemoval,
     ShellcodeMutator,
-
     # Extractors
     PExtractor,
-
     # Codewriters,
     cpp,
     cpp_alloc,
@@ -164,14 +159,11 @@ YAML_CHAIN = [
     sql_asm_cmd_exec,
     sql_asm_download,
     sql_asm_assembly,
-
     # Compilers
     LLVMPass,
-
     # Signers
     CarbonCopy,
     SigThief,
-
     # Hiver
     MetadataDB,
 ]

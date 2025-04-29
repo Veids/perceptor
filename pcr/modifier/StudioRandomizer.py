@@ -238,7 +238,7 @@ class StudioRandomizer(Link):
         company = fake.company()
         title = company.split(" ")[0].split("-")[0].removesuffix(",")
         copyright = f"Copyright © {company} {random.randint(2015, 2023)}"
-        version = f"{random.randint(0,9)}.{random.randint(0,9)}.{random.randint(0,9)}.{random.randint(0,9)}"
+        version = f"{random.randint(0, 9)}.{random.randint(0, 9)}.{random.randint(0, 9)}.{random.randint(0, 9)}"
 
         assemblyInfo = {
             "Title": genInfo("Title", title),
@@ -354,7 +354,10 @@ class StudioRandomizer(Link):
 
         text = csproj.read_text()
         replacements = {
-            "ApplicationIcon": ("<ApplicationIcon>.*</ApplicationIcon>", f"<ApplicationIcon>{icon_name}</ApplicationIcon>")
+            "ApplicationIcon": (
+                "<ApplicationIcon>.*</ApplicationIcon>",
+                f"<ApplicationIcon>{icon_name}</ApplicationIcon>",
+            )
         }
         text = self._regex_replace(replacements, text)
         csproj.write_text(text)

@@ -8,7 +8,7 @@ class cpp_prepare_syscalls(CPPBaseBlock):
 
     def process(self, **kwargs):
         template = self.load_template(
-            "codewriter/CPPCode/blocks", f"prepare_syscalls.jinja"
+            "codewriter/CPPCode/blocks", "prepare_syscalls.jinja"
         )
         return self.render_template(template, **kwargs)
 
