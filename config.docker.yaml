@@ -1,5 +1,5 @@
 main: !MainConfig
-  tmp: "./tmp"
+  tmp: "/tmp"
   cecil: "/usr/lib/mono-cecil/Mono.Cecil.dll"
   automation: "/opt/System.Management.Automation.dll"
 converter:
