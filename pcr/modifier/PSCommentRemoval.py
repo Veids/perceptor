@@ -17,7 +17,6 @@ class PSCommentRemoval(Link):
             os=self.input.output.os,
             arch=self.input.output.arch,
             path=str(self.config["main"].tmp / f"stage.{self.id}.ps"),
-            obj=None,
         )
 
     def _set_runtime(self):

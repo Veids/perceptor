@@ -223,16 +223,13 @@ def load_input(args):
         else:
             arch = ArtifactArch.X86
 
-        return Artifact(
-            type=atype, os=ArtifactOS.WINDOWS, arch=arch, path=args.input, obj=lb
-        )
+        return Artifact(type=atype, os=ArtifactOS.WINDOWS, arch=arch, path=args.input)
     else:
         return Artifact(
             type=ArtifactType.RAW,
             os=args.binary_os or ArtifactOS.UNKNOWN,
             arch=args.binary_arch or ArtifactArch.UNKNOWN,
             path=args.input,
-            obj=None,
         )
 
 

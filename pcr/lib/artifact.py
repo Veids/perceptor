@@ -57,7 +57,7 @@ class Artifact(BaseModel):
     type: ArtifactType
     os: ArtifactOS = ArtifactOS.UNKNOWN
     arch: ArtifactArch = ArtifactArch.UNKNOWN
-    path: Optional[Path] = None
+    path: Path
 
     def read(self):
         return self.path.read_bytes()
