@@ -27,7 +27,7 @@ class Donut(Link):
     yaml_tag: ClassVar[str] = "!converter.Donut"
     cmd: CmdEnum = CmdEnum.exec
 
-    donut_args: list[str] = list()
+    donut_args: list[str] = Field(default_factory=list)
 
     seed: int = Field(default_factory=get_rand_seed)
     complexity: int = Field(default=3)

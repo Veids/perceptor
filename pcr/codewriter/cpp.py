@@ -2,7 +2,7 @@ import jinja2
 
 from enum import Enum
 from typing_extensions import TypedDict
-from typing import ClassVar, Optional
+from typing import ClassVar
 from pydantic import Field, InstanceOf, BaseModel
 
 from pcr.lib.artifact import Artifact, ArtifactType
@@ -53,7 +53,7 @@ class cpp(Link):
     functions: FunctionsEnum
     output_type: OutputTypeEnum
     payload_placement: PayloadPlacementEnum
-    payload_source: Optional[str] = None
+    payload_source: str = ""
     decoders: list[InstanceOf[EncoderLink]] = Field(default_factory=list)
     blocks: list[InstanceOf[CPPBaseBlock]]
     obj: CPPObj = CPPObj()

@@ -72,7 +72,6 @@ class MetadataDB(Link):
     signature: Optional[FilePath | InstanceOf[Link]] = None
     exports: Optional[FilePath | InstanceOf[Link]] = None
 
-    name: Optional[str] = None
     pe_type: PeTypeEnum = PeTypeEnum.etc
     obj: Optional[MetadataObj] = None
 

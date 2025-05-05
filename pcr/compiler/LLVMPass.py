@@ -31,7 +31,7 @@ class LLVMPassConfig(BaseModel, YamlFuck):
     assembler: FilePath
     clang: FilePath
     clangpp: FilePath
-    windres: Optional[FilePath]
+    windres: Optional[FilePath] = None
     plugin: FilePath
 
 
@@ -55,7 +55,7 @@ class LLVMPass(Link):
     cpp: bool = True
     direct_compilation: bool = False
 
-    sources: Optional[list[str]] = None
+    sources: list[str] = Field(default_factory=list)
 
     def deduce_artifact(self) -> Artifact:
         extension = "exe"
