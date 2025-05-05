@@ -1,14 +1,14 @@
-from pathlib import Path
 import re
 import uuid
 import shutil
 import random
 import string
-from faker import Faker
 
 from enum import Enum
-from typing import Callable, ClassVar, List, Optional
-from rich import print
+from pathlib import Path
+from typing import Callable, ClassVar, Optional
+
+from faker import Faker
 from rich.markup import escape
 
 from pcr.lib.artifact import Artifact, ArtifactType
@@ -128,7 +128,7 @@ class EntityEnum(str, Enum):
 
 class StudioRandomizer(Link):
     yaml_tag: ClassVar[str] = "!modifier.StudioRandomizer"
-    entities: List[EntityEnum]
+    entities: list[EntityEnum]
     target_project: str
     filename: Optional[Obj | str] = None
     assemblyAttributes: Optional[Obj | dict] = None
@@ -212,16 +212,16 @@ class StudioRandomizer(Link):
             guids_map[main_project_guid] = self.assemblyAttributes["Guid"]
 
         for file in files:
-            print(f"        File {file.absolute()}:")
+            self.print(f"File {file.absolute()}:", nest_lvl=3)
             text = file.read_text()
 
             for original, replacement in guids_map.items():
-                print(f"            {original} -> {replacement}")
+                self.print(f"{original} -> {replacement}", nest_lvl=3)
                 text = re.sub(original, replacement, text, flags=re.I)
             file.write_text(text)
 
     def randomize_file_name(self, csproj, name):
-        print(f"        File {csproj.absolute()}:")
+        self.print(f"File {csproj.absolute()}:", nest_lvl=2)
         if self.filename:
             name = self.filename.replace(".exe", "")
 
@@ -230,7 +230,7 @@ class StudioRandomizer(Link):
 
         replacement = f"<AssemblyName>{name}</AssemblyName>"
         for match in re.findall(pattern, text):
-            print(f"            {escape(match)} -> {escape(replacement)}")
+            self.print(f"{escape(match)} -> {escape(replacement)}", nest_lvl=3)
             text = re.sub(match, replacement, text)
         csproj.write_text(text)
 
@@ -257,7 +257,7 @@ class StudioRandomizer(Link):
     def _regex_replace(self, assemblyReplacements, text):
         for _, (pattern, replacement) in assemblyReplacements.items():
             for match in re.findall(pattern, text):
-                print(f"            {escape(match)} -> {escape(replacement)}")
+                self.print(f"{escape(match)} -> {escape(replacement)}", nest_lvl=3)
                 text = text.replace(match, replacement)
 
         return text
@@ -295,7 +295,7 @@ class StudioRandomizer(Link):
             assemblyInfo["FileVersion"],
         )
 
-        print(f"        File {file.absolute()}:")
+        self.print(f"File {file.absolute()}:", nest_lvl=2)
         text = self._regex_replace(assemblyReplacements, text)
         file.write_text(text)
 
@@ -339,8 +339,8 @@ class StudioRandomizer(Link):
             for file in files:
                 self.mutate_assembly_info(file, main_project_path)
         else:
-            print(
-                "    [bold blue]>[/bold blue] AssemblyInfo.cs was not found in the solution, trying to mutate csproj"
+            self.print(
+                "AssemblyInfo.cs was not found in the solution, trying to mutate csproj"
             )
             company = fake.company()
             title = company.split(" ")[0].split("-")[0].removesuffix(",")
@@ -388,15 +388,15 @@ class StudioRandomizer(Link):
         shutil.copytree(src_path, path)
 
         if EntityEnum.guid in self.entities:
-            print("    [bold blue]>[/bold blue] Replacing GUIDs:")
+            self.print("Replacing GUIDs:")
             self.randomize_guids()
 
         if EntityEnum.assemblyInfo in self.entities:
-            print("    [bold blue]>[/bold blue] Replacing AssemblyInfo:")
+            self.print("Replacing AssemblyInfo:")
             self.randomize_assembly_info()
 
         if EntityEnum.icon in self.entities:
-            print("    [bold blue]>[/bold blue] Handling icon...")
+            self.print("Handling icon...")
             self.mutate_icon()
 
     def info(self) -> str:

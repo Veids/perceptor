@@ -91,7 +91,7 @@ class Donut(Link):
         donut_cmd = self.get_command_line()
         donut_cmd = " ".join(donut_cmd)
 
-        print(f"    [bold blue]>[/bold blue] Cmdline: {donut_cmd}")
+        self.print(f"Cmdline: {donut_cmd}")
 
         stdout = subprocess.check_output(
             donut_cmd, stderr=subprocess.STDOUT, shell=True
@@ -112,7 +112,7 @@ class Donut(Link):
                 raise NotImplementedError("Failed to find call instruction")
 
             loader_addr = inst.operands[0].imm
-            print(f"    [bold blue]>[/bold blue] Loader addr: {hex(loader_addr)}")
+            self.print(f"Loader addr: {hex(loader_addr)}")
             return loader_addr, inst.size
 
     def _do_obfuscate(self):

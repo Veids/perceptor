@@ -2,7 +2,6 @@ import lief
 
 from typing import ClassVar, Optional
 from pydantic import FilePath
-from rich import print
 
 from pcr.lib.artifact import Artifact, ArtifactType
 from pcr.lib.link import Link, Obj
@@ -74,15 +73,13 @@ class ResourceCarver(Link):
                 "minor_version"
             ]
 
-        print(
-            f"    [bold blue]>[/bold blue] Carved version:\n{input_binary.resources_manager.version}"
-        )
+        self.print(f"Carved version:\n{input_binary.resources_manager.version}")
 
     def carve_icon(self, input_binary):
         if not self.icon:
             pass
 
-        print("    [bold blue]>[/bold blue] Carved icon")
+        self.print("Carved icon")
 
     def process(self):
         self.verify_args()

@@ -3,15 +3,14 @@ import json
 import hashlib
 import pydantic
 
-from pathlib import Path
 from enum import Enum
-from typing import ClassVar, Optional, List
+from pathlib import Path
+from typing import ClassVar, Optional
 from pydantic import FilePath, InstanceOf
-from rich import print
+from peewee import SqliteDatabase, Model, CharField, BlobField, TextField, fn
 
 from pcr.extractor.PExtractor import AssemblyInfoObj
 from pcr.lib.link import Link
-from peewee import SqliteDatabase, Model, CharField, BlobField, TextField, fn
 
 database = SqliteDatabase(None)
 
@@ -59,7 +58,7 @@ class MetadataObj(pydantic.BaseModel):
     assemblyInfo: AssemblyInfoObj
     assemblyAttributes: Optional[dict] = None
     originalFilename: str
-    exports: Optional[List[str]] = None
+    exports: Optional[list[str]] = None
 
 
 class MetadataDB(Link):
@@ -143,7 +142,7 @@ class MetadataDB(Link):
         if signature_blob:
             signature_blob = zlib.compress(signature_blob)
 
-        print(f"""    [bold blue]>[/bold blue] Storing metadata:
+        self.print(f"""Storing metadata:
 hash: {hash}
 icon size: {len(icon_blob or [])}
 manifest length: {len(manifest_blob or [])}
@@ -180,7 +179,7 @@ signature length: {len(signature_blob or [])}""")
         if metadata.signature:
             signature_blob = zlib.decompress(metadata.signature)
 
-        print(f"""    [bold blue]>[/bold blue] Returned metadata:
+        self.print(f"""Returned metadata:
 hash: {metadata.hash}
 icon size: {len(icon_blob or [])}
 manifest length: {len(metadata.manifest or [])}

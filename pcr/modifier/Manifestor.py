@@ -1,5 +1,5 @@
 from xml.dom.minidom import parse, parseString
-from typing import ClassVar, Optional, List
+from typing import ClassVar, Optional
 from typing_extensions import TypedDict, NotRequired
 
 from pcr.lib.link import Link, Obj
@@ -15,7 +15,7 @@ class AssemblyIdentityDict(TypedDict):
 
 class Manifestor(Link):
     yaml_tag: ClassVar[str] = "!modifier.Manifestor"
-    keep: Optional[List[str]] = None
+    keep: Optional[list[str]] = None
     assemblyIdentity: Optional[AssemblyIdentityDict] = None
     description: Optional[str] = None
     manifest: Optional[bytes | Obj] = None

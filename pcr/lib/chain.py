@@ -1,4 +1,4 @@
-from typing import ClassVar, List
+from typing import ClassVar
 from pydantic import BaseModel, InstanceOf
 from rich.table import Table
 from rich import print
@@ -10,7 +10,7 @@ from pcr.lib.link import YamlFuck, Stdin, Link
 
 class Chain(BaseModel, YamlFuck):
     yaml_tag: ClassVar[str] = "!Chain"
-    links: List[InstanceOf[Link]]
+    links: list[InstanceOf[Link]]
 
     def print_stages(self):
         table = Table(

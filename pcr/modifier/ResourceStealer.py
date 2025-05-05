@@ -1,9 +1,8 @@
 import lief
 
 from enum import Enum
-from typing import ClassVar, List
+from typing import ClassVar
 from pydantic import FilePath
-from rich import print
 
 from pcr.lib.artifact import Artifact, ArtifactType
 from pcr.lib.link import Link
@@ -17,7 +16,7 @@ class StealEnum(str, Enum):
 class ResourceStealer(Link):
     yaml_tag: ClassVar[str] = "!modifier.ResourceStealer"
     target: FilePath
-    steal: List[StealEnum]
+    steal: list[StealEnum]
 
     def verify_args(self):
         if self.input.output.type != ArtifactType.PE:
@@ -38,7 +37,7 @@ class ResourceStealer(Link):
         if not target_rm.has_version:
             raise ValueError("Target binary doens't have version info structure")
 
-        print(f"    [bold blue]>[/bold blue] Stealing version:\n{target_rm.version}")
+        self.print(f"Stealing version:\n{target_rm.version}")
 
         version_node = next(
             iter(
@@ -73,7 +72,7 @@ class ResourceStealer(Link):
         if not target_rm.has_manifest:
             raise ValueError("Target binary doens't have manifest")
 
-        print(f"    [bold blue]>[/bold blue] Stealing manifest:\n{target_rm.manifest}")
+        self.print(f"Stealing manifest:\n{target_rm.manifest}")
 
         manifest_node = next(
             iter(

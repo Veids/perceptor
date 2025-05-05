@@ -3,27 +3,29 @@ import typing
 import ruamel
 import jinja2
 
-from typing import Any, ClassVar, Optional, ForwardRef, List
 from abc import ABC, abstractmethod
-from pydantic import BaseModel, InstanceOf
+from rich import print as rprint
+from typing import Any, ClassVar, Optional, ForwardRef
+from pydantic import BaseModel, Field, InstanceOf
 
 from pcr.lib.artifact import Artifact
 from pcr.lib.common import YamlFuck, flatten
 from pcr.lib.jinja_helpers import common_filter_random_variable
 
 Link = ForwardRef("Link")
+INDENT_STRING = " " * 4
 
 
 class Link(BaseModel, YamlFuck, ABC):
     yaml_tag: ClassVar["str"]
     input: Optional[InstanceOf[Link]] = None
     output: Optional[InstanceOf[Artifact]] = None
-    comment: Optional[str] = None
+    comment: str = ""
     config: Optional[dict] = None
     id: Optional[int] = None
-    links: Optional[List[InstanceOf[Link]]] = None
+    links: Optional[list[InstanceOf[Link]]] = None
     name: str
-    do_raise: Optional[bool] = False
+    do_raise: bool = False
 
     @abstractmethod
     def process(self) -> Any:
@@ -37,6 +39,11 @@ class Link(BaseModel, YamlFuck, ABC):
         for k, v in self.__dict__.items():
             if isinstance(v, Obj):
                 setattr(self, k, v.get())
+
+    def print(self, message: str, nest_lvl: int = 1, colour="blue"):
+        indent = INDENT_STRING * nest_lvl
+        indent_suffix = f"[bold {colour}]>[/bold {colour}]"
+        rprint(f"{indent}{indent_suffix} {message}")
 
 
 class EncoderLink(Link):
@@ -60,7 +67,7 @@ class BaseBlock(Link, ABC):
 
 
 class CPPBaseBlock(BaseBlock):
-    linker_args: List[str] = list()
+    linker_args: list[str] = Field(default_factory=list)
 
 
 class Stdin(Link):

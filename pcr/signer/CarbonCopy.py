@@ -9,7 +9,6 @@ from pydantic import AnyHttpUrl
 from typing import ClassVar
 from OpenSSL import crypto
 from sys import platform
-from rich import print
 
 from pcr.lib.link import Link, Obj
 from pcr.lib.artifact import Artifact
@@ -34,7 +33,7 @@ class CarbonCopy(Link):
     def process(self):
         self.output = self.deduce_artifact()
         # Fetching Details
-        print("[+] Loading public key of %s in Memory..." % self.host)
+        self.print("Loading public key of %s in Memory..." % self.host)
         ogcert = ssl.get_server_certificate((self.host, self.port))
         x509 = crypto.load_certificate(crypto.FILETYPE_PEM, ogcert)
 
@@ -51,26 +50,26 @@ class CarbonCopy(Link):
         cert = crypto.X509()
 
         # Setting Cert details from loaded from the original Certificate
-        print("[+] Cloning Certificate Version")
+        self.print("Cloning Certificate Version")
         cert.set_version(x509.get_version())
-        print("[+] Cloning Certificate Serial Number")
+        self.print("Cloning Certificate Serial Number")
         cert.set_serial_number(x509.get_serial_number())
-        print("[+] Cloning Certificate Subject")
+        self.print("Cloning Certificate Subject")
         cert.set_subject(x509.get_subject())
-        print("[+] Cloning Certificate Issuer")
+        self.print("Cloning Certificate Issuer")
         cert.set_issuer(x509.get_issuer())
-        print("[+] Cloning Certificate Registration & Expiration Dates")
+        self.print("Cloning Certificate Registration & Expiration Dates")
         cert.set_notBefore(x509.get_notBefore())
         cert.set_notAfter(x509.get_notAfter())
         cert.set_pubkey(k)
-        print("[+] Signing Keys")
+        self.print("Signing Keys")
         cert.sign(k, "sha256")
 
-        print("[+] Creating %s and %s" % (CNCRT, CNKEY))
+        self.print("Creating %s and %s" % (CNCRT, CNKEY))
         CNCRT.write_bytes(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
         CNKEY.write_bytes(crypto.dump_privatekey(crypto.FILETYPE_PEM, k))
-        print(
-            "[+] Clone process completed. Creating PFX file for signing executable..."
+        self.print(
+            "Clone process completed. Creating PFX file for signing executable..."
         )
 
         try:
@@ -87,8 +86,8 @@ class CarbonCopy(Link):
         signee = str(self.input.output.path)
         signed = str(self.output.path)
         if platform == "win32":
-            print("[+] Platform is Windows OS...")
-            print("[+] Signing %s with signtool.exe..." % signed)
+            self.print("Platform is Windows OS...")
+            self.print("Signing %s with signtool.exe..." % signed)
             shutil.copy(signee, signed)
             subprocess.check_call(
                 [
@@ -110,8 +109,8 @@ class CarbonCopy(Link):
             )
 
         else:
-            print("[+] Platform is Linux OS...")
-            print("[+] Signing %s with %s using osslsigncode..." % (signee, PFXFILE))
+            self.print("Platform is Linux OS...")
+            self.print("Signing %s with %s using osslsigncode..." % (signee, PFXFILE))
             args = (
                 "osslsigncode",
                 "sign",
@@ -128,7 +127,6 @@ class CarbonCopy(Link):
                 "-out",
                 signed,
             )
-            print("[+] ", end="", flush=True)
             subprocess.check_call(args)
 
     def info(self):

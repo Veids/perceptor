@@ -2,9 +2,8 @@ import jinja2
 
 from enum import Enum
 from typing_extensions import TypedDict
-from typing import ClassVar, Optional, List
-from rich import print
-from pydantic import InstanceOf, BaseModel
+from typing import ClassVar, Optional
+from pydantic import Field, InstanceOf, BaseModel
 
 from pcr.lib.artifact import Artifact, ArtifactType
 from pcr.lib.link import CPPBaseBlock, Link, EncoderLink
@@ -45,7 +44,7 @@ class AllocDict(TypedDict):
 
 
 class CPPObj(BaseModel):
-    linker_args: list[str] = list()
+    linker_args: list[str] = Field(default_factory=list)
 
 
 class cpp(Link):
@@ -55,8 +54,8 @@ class cpp(Link):
     output_type: OutputTypeEnum
     payload_placement: PayloadPlacementEnum
     payload_source: Optional[str] = None
-    decoders: List[InstanceOf[EncoderLink]] = list()
-    blocks: List[InstanceOf[CPPBaseBlock]]
+    decoders: list[InstanceOf[EncoderLink]] = Field(default_factory=list)
+    blocks: list[InstanceOf[CPPBaseBlock]]
     obj: CPPObj = CPPObj()
 
     def load_template(self):
@@ -70,7 +69,7 @@ class cpp(Link):
             type=ArtifactType.CPP,
             os=self.input.output.os,
             arch=self.input.output.arch,
-            path=str(self.config["main"].tmp / f"stage.{self.id}.cpp"),
+            path=self.config["main"].tmp / f"stage.{self.id}.cpp",
         )
 
     def stack_warning(self):
@@ -78,8 +77,9 @@ class cpp(Link):
             self.payload_placement == PayloadPlacementEnum.text
             and self.input.output.path.stat().st_size > STACK_SIZE_WARNING
         ):
-            print(
-                "    [bold yellow]![/bold yellow] Payload size is too high to place it into the stack, consider switching to another location"
+            self.print(
+                "Payload size is too high to place it into the stack, consider switching to another location",
+                colour="yellow",
             )
 
     def process(self):
@@ -90,7 +90,7 @@ class cpp(Link):
             self.obj.linker_args.append("-lwininet")
 
         shellcode = self.input.output.read()
-        print(f"    [bold blue]>[/bold blue] Payload size is {len(shellcode)} bytes")
+        self.print(f"Payload size is {len(shellcode)} bytes")
         shellcode = "".join("\\x%x" % x for x in shellcode)
 
         decoders = []

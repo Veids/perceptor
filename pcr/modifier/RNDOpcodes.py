@@ -3,7 +3,6 @@ import sys
 from random import Random, randrange
 from enum import Enum
 from typing import ClassVar
-from rich import print
 from keystone import Ks, KS_ARCH_X86, KS_MODE_32, KS_MODE_64
 from pydantic import Field
 
@@ -68,7 +67,7 @@ class RNDOpcodes(EncoderLink):
         else:
             n = int(self.n)
 
-        print(f"    [bold blue]>[/bold blue] Inserting: {n} opcodes")
+        self.print(f"Inserting: {n} opcodes")
 
         opcodes = b""
         if self.input.output.arch in [ArtifactArch.X86, ArtifactArch.X86_AMD64]:
@@ -93,7 +92,7 @@ class RNDOpcodes(EncoderLink):
         self.output = self.deduce_artifact()
         data = self.input.output.read()
 
-        print(f"    [bold blue]>[/bold blue] Seed: {self.seed}")
+        self.print(f"Seed: {self.seed}")
         rng.seed(self.seed)
 
         opcodes = self.generate_opcodes()

@@ -3,13 +3,27 @@ import xml.dom.minidom
 
 from enum import Enum
 from pathlib import Path
-from pydantic import InstanceOf, FilePath, BaseModel
-from typing import ClassVar, List, Optional
+from pydantic import Field, InstanceOf, FilePath, BaseModel
+from typing import ClassVar, Optional
 from rich import print as rprint
 
 from pcr.lib.link import Link, Obj
 from pcr.lib.common import YamlFuck
 from pcr.lib.artifact import Artifact, ArtifactType
+
+
+_COMMON_FLAGS = [
+    "-pthread",
+    "-s",
+    "-w",
+    "-fpermissive",
+    "-static",
+    "-lpsapi",
+    "-lntdll",
+    "-Wl,--subsystem,console",
+    "-Xclang",
+    "-flto-visibility-public-std",
+]
 
 
 class LLVMPassConfig(BaseModel, YamlFuck):
@@ -29,19 +43,19 @@ class LLVMPass(Link):
     yaml_tag: ClassVar[str] = "!compiler.LLVMPass"
     icon: Optional[FilePath | InstanceOf[Link] | bytes | Obj] = None
     manifest: Optional[FilePath | InstanceOf[Link]] = None
-    linker_args: List[str] | Obj = list()
-    resources: List[str | InstanceOf[Link]] = list()
+    linker_args: list[str] | Obj = Field(default_factory=list)
+    resources: list[str | InstanceOf[Link]] = Field(default_factory=list)
     version_info: Optional[FilePath] = None
     generate_empty_version: bool = False
     passes: str
     dll: bool = False
-    exports: Optional[List[str] | Obj] = None
+    exports: Optional[list[str] | Obj] = None
     out_name: Optional[str | Obj] = None
-    files: Optional[FilesEnum | List[Path]] = None
+    files: Optional[FilesEnum | list[Path]] = None
     cpp: bool = True
     direct_compilation: bool = False
 
-    sources: Optional[List[str]] = None
+    sources: Optional[list[str]] = None
 
     def deduce_artifact(self) -> Artifact:
         extension = "exe"
@@ -59,33 +73,10 @@ class LLVMPass(Link):
         )
 
     def llvm_ir_args(self):
-        return [
-            "-O3",
-            "-pthread",
-            "-s",
-            "-w",
-            "-fpermissive",
-            "-static",
-            "-lpsapi",
-            "-lntdll",
-            "-Wl,--subsystem,console",
-            "-Xclang",
-            "-flto-visibility-public-std",
-        ] + self.linker_args
+        return ["-O3", *_COMMON_FLAGS, *self.linker_args]
 
     def clang_args(self):
-        return [
-            "-pthread",
-            "-s",
-            "-w",
-            "-fpermissive",
-            "-static",
-            "-lpsapi",
-            "-lntdll",
-            "-Wl,--subsystem,console",
-            "-Xclang",
-            "-flto-visibility-public-std",
-        ] + self.linker_args
+        return [*_COMMON_FLAGS, *self.linker_args]
 
     def dll_args(self):
         return ["-shared"] if self.dll else []
@@ -128,8 +119,8 @@ class LLVMPass(Link):
 
             clang_cmd += ["-o", f"{self.output.path}.{i}.ll"]
 
-            rprint("    [bold green]>[/bold green] Obtaining LLVM IR")
-            rprint(f"    [bold green]>[/bold green] {' '.join(clang_cmd)}")
+            self.print("Obtaining LLVM IR")
+            self.print(" ".join(clang_cmd))
 
             stdout = LLVMPass.subprocess_wrap(clang_cmd, stderr=subprocess.STDOUT)
             print(stdout.decode())
@@ -139,8 +130,8 @@ class LLVMPass(Link):
         link_cmd += [f"{self.output.path}.{i}.ll" for i in range(len(self.sources))]
         link_cmd += ["-o", f"{self.output.path}.ll"]
 
-        rprint("    [bold green]>[/bold green] Linking LLVM IR")
-        rprint(f"    [bold green]>[/bold green] {' '.join(link_cmd)}")
+        self.print("Linking LLVM IR")
+        self.print(" ".join(link_cmd))
 
         stdout = LLVMPass.subprocess_wrap(link_cmd, stderr=subprocess.STDOUT)
         print(stdout.decode())
@@ -157,8 +148,8 @@ class LLVMPass(Link):
         ]
         opt_cmd = " ".join(opt_cmd)
 
-        rprint("    [bold green]>[/bold green] Running passes on the obtained LLVM IR")
-        rprint(f"    [bold green]>[/bold green] {opt_cmd}")
+        self.print("Running passes on the obtained LLVM IR")
+        self.print(opt_cmd)
 
         stdout = LLVMPass.subprocess_wrap(opt_cmd, stderr=subprocess.STDOUT, shell=True)
         print(stdout.decode())
@@ -176,7 +167,7 @@ class LLVMPass(Link):
             output,
         ]
         windres_cmd = " ".join(windres_cmd)
-        rprint(f"    [bold green]>[/bold green] {windres_cmd}")
+        self.print(windres_cmd)
         return LLVMPass.subprocess_wrap(
             windres_cmd, stderr=subprocess.STDOUT, shell=True
         )
@@ -184,7 +175,7 @@ class LLVMPass(Link):
     def generate_icon(self):
         if self.icon is not None:
             if isinstance(self.icon, str):
-                icon_path = self.icon
+                icon_path = Path(self.icon)
             if isinstance(self.icon, bytes):
                 icon_path = self.config["main"].tmp / f"stage.{self.id}.icon.ico"
                 icon_path.write_bytes(self.icon)
@@ -200,7 +191,7 @@ class LLVMPass(Link):
 
             icon_res_path = str(self.config["main"].tmp / "icon.res")
 
-            rprint("    [bold green]>[/bold green] Generating icon resource...")
+            self.print("Generating icon resource...")
             stdout = self.build_resource(icon_rc_path, icon_res_path)
             print(stdout.decode())
 
@@ -250,7 +241,7 @@ END
 
             version_info_res_path = str(self.config["main"].tmp / "version_info.res")
 
-            rprint("    [bold green]>[/bold green] Generating version info resource...")
+            self.print("Generating version info resource...")
             stdout = self.build_resource(str(self.version_info), version_info_res_path)
             print(stdout.decode())
 
@@ -272,7 +263,7 @@ END
 
             manifest_res_path = str(self.config["main"].tmp / "manifest.res")
 
-            rprint("    [bold green]>[/bold green] Generating manifest resource...")
+            self.print("Generating manifest resource...")
             rprint(xml.dom.minidom.parse(str(manifest_path)).toprettyxml())
             stdout = self.build_resource(manifest_rc_path, manifest_res_path)
             print(stdout.decode())
@@ -300,8 +291,8 @@ END
         clang_cmd += ["-c"]
         clang_cmd += ["-o", exports_out_path]
 
-        rprint(f"    [bold green]>[/bold green] Generating exports ({len(exports)})")
-        rprint(f"    [bold green]>[/bold green] {' '.join(clang_cmd)}")
+        self.print(f"Generating exports ({len(exports)})")
+        self.print(" ".join(clang_cmd))
 
         stdout = LLVMPass.subprocess_wrap(clang_cmd, stderr=subprocess.STDOUT)
         print(stdout.decode())
@@ -328,8 +319,8 @@ END
         clang_cmd += ["-o", f"{self.output.path}"]
         clang_cmd = " ".join(clang_cmd)
 
-        rprint("    [bold green]>[/bold green] Compiling...")
-        rprint(f"    [bold green]>[/bold green] {clang_cmd}")
+        self.print("Compiling...")
+        self.print(clang_cmd)
 
         stdout = LLVMPass.subprocess_wrap(
             clang_cmd, stderr=subprocess.STDOUT, shell=True
@@ -366,8 +357,8 @@ END
         clang_cmd += ["-o", f"{self.output.path}"]
         clang_cmd = " ".join(clang_cmd)
 
-        rprint("    [bold green]>[/bold green] Compiling...")
-        rprint(f"    [bold green]>[/bold green] {clang_cmd}")
+        self.print("Compiling...")
+        self.print(clang_cmd)
 
         stdout = LLVMPass.subprocess_wrap(
             clang_cmd, stderr=subprocess.STDOUT, shell=True

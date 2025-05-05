@@ -1,8 +1,6 @@
 import jinja2
 
-from typing import ClassVar, List
-
-from rich import print
+from typing import ClassVar
 from pydantic import InstanceOf
 
 from pcr.lib.link import BaseBlock, Link
@@ -13,7 +11,7 @@ from pcr.lib.jinja_helpers import common_filter_random_variable
 class SQLAssembly(Link):
     yaml_tag: ClassVar[str] = "!codewriter.SQLAssembly"
 
-    blocks: List[InstanceOf[BaseBlock]]
+    blocks: list[InstanceOf[BaseBlock]]
 
     def load_template(self):
         env = jinja2.Environment(
@@ -33,8 +31,8 @@ class SQLAssembly(Link):
     def process(self):
         self.output = self.deduce_artifact()
 
-        print(
-            "    [bold blue]>[/bold blue] To convert dll: f'0x{binascii.hexlify(open(file_location, \"rb\").read()).decode()}' "
+        self.print(
+            "To convert dll: f'0x{binascii.hexlify(open(file_location, \"rb\").read()).decode()}' "
         )
 
         definitions = []

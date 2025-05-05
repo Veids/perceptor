@@ -4,7 +4,6 @@ import secrets
 
 from typing import ClassVar
 from itertools import islice, cycle
-from rich import print
 from Crypto.Util import strxor
 
 from pcr.lib.artifact import Artifact
@@ -37,12 +36,12 @@ class XOREncode(EncoderLink):
         self.output = self.deduce_artifact()
         data = self.input.output.read()
 
-        print(f"    [bold blue]>[/bold blue] Using key_length: {self.key_length}")
+        self.print(f"Using key_length: {self.key_length}")
 
         if not self.key:
             self.key = self.generate_key()
 
-        data = strxor.strxor(data, bytearray(islice(cycle(self.key), len(data))))
+        data = strxor.strxor(data, bytes(islice(cycle(self.key), len(data))))
         self.output.write(data)
 
         self.decoder_data = {

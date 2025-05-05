@@ -2,8 +2,6 @@
 
 from typing import ClassVar
 
-from rich import print
-
 from pcr.lib.artifact import Artifact, ArtifactType
 from pcr.lib.link import Link
 
@@ -16,7 +14,7 @@ class PSCommentRemoval(Link):
             type=ArtifactType.PS1,
             os=self.input.output.os,
             arch=self.input.output.arch,
-            path=str(self.config["main"].tmp / f"stage.{self.id}.ps"),
+            path=self.config["main"].tmp / f"stage.{self.id}.ps",
         )
 
     def _set_runtime(self):
@@ -77,9 +75,7 @@ class PSCommentRemoval(Link):
 
                 currentColumn = token.EndColumn
 
-        print(
-            f"    [bold blue]>[/bold blue] Reduced size {len(scriptBlock)} -> {len(result)}"
-        )
+        self.print(f"Reduced size {len(scriptBlock)} -> {len(result)}")
         self.output.write(result.encode("utf-8"))
 
     def info(self) -> str:

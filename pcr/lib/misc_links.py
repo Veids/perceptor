@@ -1,6 +1,5 @@
 import subprocess
 
-from rich import print
 from typing import ClassVar
 from typing_extensions import TypedDict
 
@@ -44,7 +43,7 @@ class Command(Link):
             codelib=CodeLib(),
         )
 
-        print(f"    [bold blue]>[/bold blue] Running command: {cmd}")
+        self.print(f"Running command: {cmd}")
         subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=self.shell)
 
     def info(self) -> str:

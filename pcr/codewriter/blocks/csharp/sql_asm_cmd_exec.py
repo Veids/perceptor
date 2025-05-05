@@ -1,5 +1,4 @@
 from typing import ClassVar
-from rich import print
 
 from pcr.lib.jinja_helpers import common_filter_random_variable
 from pcr.lib.link import BaseBlock
@@ -18,8 +17,8 @@ class sql_asm_cmd_exec(BaseBlock):
 
         function_name = common_filter_random_variable("cmd_exec_fn")
         class_name = common_filter_random_variable("class_name")
-        print(
-            f"    [bold blue]>[/bold blue] cmd_exec: CREATE PROCEDURE \\[dbo].\\[cmd_exec] @execCommand NVARCHAR (4000) AS EXTERNAL NAME \\[ASSEMBLY_NAME].\\[{class_name}].\\[{function_name}];"
+        self.print(
+            f"cmd_exec: CREATE PROCEDURE \\[dbo].\\[cmd_exec] @execCommand NVARCHAR (4000) AS EXTERNAL NAME \\[ASSEMBLY_NAME].\\[{class_name}].\\[{function_name}];"
         )
 
         return d, c

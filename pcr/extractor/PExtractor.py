@@ -2,7 +2,6 @@ import lief
 import xmltodict
 
 from enum import Enum
-from rich import print
 from typing import ClassVar, Optional
 from pydantic import FilePath, BaseModel
 from wand.image import Image
@@ -218,12 +217,10 @@ class PExtractor(Link):
 
             assemblyAttributes = None
             if pe_type == "net":
-                print(
-                    "    [bold blue]>[/bold blue] Trying cecil for assemblyAttributes/Mvid retrival..."
-                )
+                self.print("Trying cecil for assemblyAttributes/Mvid retrival...")
                 assemblyAttributes = self.get_assembly_info_cecil()
 
-            print("    [bold blue]>[/bold blue] Using lief to get assemblyInfo")
+            self.print("Using lief to get assemblyInfo")
             assemblyInfo = self.get_assembly_info_lief(target)
 
             self.obj = {

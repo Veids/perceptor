@@ -5,7 +5,6 @@ from random import randrange
 
 import coffipy
 
-from rich import print
 from pydantic import Field
 from furikuripy.common import rng
 from furikuripy.fuku_obfuscator import FukuObfuscator
@@ -105,9 +104,7 @@ class ShellcodeMutator(Link):
     def fix_associations(self, symbols, associations):
         for symbol in symbols:
             if newValue := associations.get(symbol.value):
-                print(
-                    f"    [bold blue]>[/bold blue] {symbol.get_name()}: {symbol.value} -> {newValue}"
-                )
+                self.print(f"{symbol.get_name()}: {symbol.value} -> {newValue}")
                 symbol.value = newValue
 
     def get_relocations(self, text_section):
@@ -160,7 +157,7 @@ class ShellcodeMutator(Link):
 
     def process(self):
         self.output = self.deduce_artifact()
-        print(f"    [bold blue]>[/bold blue] Seed: {self.seed}")
+        self.print(f"Seed: {self.seed}")
 
         match self.input.output.type:
             case ArtifactType.OBJECT:

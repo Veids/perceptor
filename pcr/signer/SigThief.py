@@ -36,7 +36,7 @@ class SigThief(Link):
                 if self.do_raise:
                     raise ValueError("There is no signature to append")
                 else:
-                    print("No signature was appended")
+                    self.print("No signature was appended")
                     shutil.copy(self.input.output.path, self.output.path)
                     return
             elif isinstance(self.target, bytes):

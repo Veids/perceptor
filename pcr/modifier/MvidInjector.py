@@ -1,7 +1,6 @@
 import uuid
 
 from typing import ClassVar, Optional
-from rich import print
 
 from pcr.lib.artifact import Artifact
 from pcr.lib.link import Link, Obj
@@ -23,7 +22,7 @@ class MvidInjector(Link):
     def process(self):
         self.output = self.deduce_artifact()
 
-        print(f"    [bold blue]>[/bold blue] Injecting Mvid: {self.mvid}")
+        self.print(f"Injecting Mvid: {self.mvid}")
         import clr
 
         clr.AddReference(str(self.config["main"].cecil))
