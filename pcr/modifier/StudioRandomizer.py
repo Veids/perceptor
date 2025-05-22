@@ -19,6 +19,12 @@ fake = Faker()
 KEY_LENGTH_RND = 10
 KEY_LENGTH_RND_END = 50
 KEY_ALPHABET = ".+-,:;_%=()" + string.ascii_letters + string.digits
+PROJECT_REGEX = re.compile(
+    r"Project\(\".*?\"\)\s*=\s*\"(.*?)\",\s*\"(.*)\",\s*\"\{(.*)\}\"\s*EndProject"
+)
+GUID_REGEX = re.compile(
+    "(?:(?:[0-9a-fA-F]){8}-(?:[0-9a-fA-F]){4}-(?:[0-9a-fA-F]){4}-(?:[0-9a-fA-F]){4}-(?:[0-9a-fA-F]){12})"
+)
 
 # https://github.com/JamesW75/visual-studio-project-type-guid
 WELL_KNOWN_GUIDS = {
@@ -109,7 +115,11 @@ WELL_KNOWN_GUIDS = {
 
 
 def genAssemblyInfo(name, info):
-    return f'[assembly: Assembly{name}("{info}")]'
+    match name:
+        case "Guid":
+            return f'[assembly: {name}("{info}")]'
+        case _:
+            return f'[assembly: Assembly{name}("{info}")]'
 
 
 def genCsprojAssemblyInfo(name, info):
@@ -151,7 +161,6 @@ class StudioRandomizer(Link):
         )
 
     def get_guids(self):
-        guid_pattern = "(?:(?:[0-9a-fA-F]){8}-(?:[0-9a-fA-F]){4}-(?:[0-9a-fA-F]){4}-(?:[0-9a-fA-F]){4}-(?:[0-9a-fA-F]){12})"
         files = (
             list(self.output.path.rglob("*.sln"))
             + list(self.output.path.rglob("*.csproj"))
@@ -160,31 +169,29 @@ class StudioRandomizer(Link):
 
         guids = set()
         for file in files:
-            matches = [x.lower() for x in re.findall(guid_pattern, file.read_text())]
+            matches = [x.lower() for x in re.findall(GUID_REGEX, file.read_text())]
             guids.update(matches)
 
         guids -= WELL_KNOWN_GUIDS
         return files, guids
 
     def get_projects_guid(self):
-        project_regex = r"Project\(\".*?\"\)\s*=\s*\"(.*?)\",\s*\"(.*)\",\s*\"\{(.*)\}\"\s*EndProject"
         files = list(self.output.path.rglob("*.sln"))
 
         guids = {}
         for file in files:
-            for project, _, guid in re.findall(project_regex, file.read_text()):
+            for project, _, guid in re.findall(PROJECT_REGEX, file.read_text()):
                 guids[project] = guid.lower()
 
         return guids
 
     def get_projects_path(self):
-        project_regex = r"Project\(\".*?\"\)\s*=\s*\"(.*?)\",\s*\"(.*)\",\s*\"\{(.*)\}\"\s*EndProject"
         files = list(self.output.path.rglob("*.sln"))
 
         projects = {}
         for file in files:
             projects[file] = {}
-            for project, path, _ in re.findall(project_regex, file.read_text()):
+            for project, path, _ in re.findall(PROJECT_REGEX, file.read_text()):
                 projects[file][project] = path
 
         return projects
@@ -239,6 +246,7 @@ class StudioRandomizer(Link):
         title = company.split(" ")[0].split("-")[0].removesuffix(",")
         copyright = f"Copyright © {company} {random.randint(2015, 2023)}"
         version = f"{random.randint(0, 9)}.{random.randint(0, 9)}.{random.randint(0, 9)}.{random.randint(0, 9)}"
+        typelib_guid = str(uuid.uuid4())
 
         assemblyInfo = {
             "Title": genInfo("Title", title),
@@ -251,6 +259,7 @@ class StudioRandomizer(Link):
             "Culture": genInfo("Culture", ""),
             "Version": genInfo("Version", version),
             "FileVersion": genInfo("FileVersion", version),
+            "Guid": genInfo("Guid", typelib_guid),
         }
         return assemblyInfo, title
 
@@ -280,7 +289,14 @@ class StudioRandomizer(Link):
             self.randomize_file_name(main_project_path, title)
 
         def genRepl(name):
-            return (rf'\[assembly: Assembly{name}\(".*"\)\]', assemblyInfo[name])
+            match name:
+                case "Guid":
+                    return (rf'\[assembly: {name}\(".*"\)\]', assemblyInfo[name])
+                case _:
+                    return (
+                        rf'\[assembly: Assembly{name}\(".*"\)\]',
+                        assemblyInfo[name],
+                    )
 
         assemblyReplacements = {}
         for key in assemblyInfo.keys():
