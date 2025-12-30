@@ -61,6 +61,15 @@ def parse_args():
         description="perceptor: A python script to automatically apply several transforms to a source artifact",
     )
     parser.add_argument(
+        "-pt",
+        "--perceptor-config",
+        required=False,
+        type=Path,
+        action="store",
+        default="config.yaml",
+        help="Perceptor config path"
+    )
+    parser.add_argument(
         "-c",
         "--chain",
         required=True,
@@ -235,7 +244,7 @@ def load_input(args):
 
 def load_config(args):
     yaml = get_yaml(YAML_CONFIG)
-    with open("config.yaml", "r") as f:
+    with open(args.perceptor_config, "r") as f:
         return yaml.load(f.read())
 
 

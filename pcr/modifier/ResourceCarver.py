@@ -40,7 +40,7 @@ class ResourceCarver(Link):
             )
             id_node = version_node.childs[0]
             lang_node = id_node.childs[0]
-            lang_node.content = memoryview(self.version)
+            lang_node.content = self.version
         else:
             version_node = lief.PE.ResourceDirectory()
             version_node.id = lief.PE.ResourcesManager.TYPE.VERSION.value
@@ -51,12 +51,9 @@ class ResourceCarver(Link):
             lang_node = lief.PE.ResourceData()
             lang_node.id = 1033
             lang_node.code_page = 1252
-            lang_node.content = memoryview(self.version)
+            lang_node.content = self.version
 
-            id_node.add_data_node(lang_node)
-            version_node.add_directory_node(id_node)
-
-            input_binary.resources.add_directory_node(version_node)
+            input_binary.resources.add_child(version_node).add_child(id_node).add_child(lang_node)
 
         if self.version_directory_config:
             lang_node.code_page = self.version_directory_config["code_page"]
@@ -73,7 +70,8 @@ class ResourceCarver(Link):
                 "minor_version"
             ]
 
-        self.print(f"Carved version:\n{input_binary.resources_manager.version}")
+        for i, version in enumerate(input_binary.resources_manager.version):
+            self.print(f"Carved version with id {i}:\n{version}")
 
     def carve_icon(self, input_binary):
         if not self.icon:
@@ -92,8 +90,10 @@ class ResourceCarver(Link):
         self.carve_version_info(input_binary)
         self.carve_icon(input_binary)
 
-        builder = lief.PE.Builder(input_binary)
-        builder.build_resources(True)
+        builder_config = lief.PE.Builder.config_t()
+        builder_config.resources = True
+
+        builder = lief.PE.Builder(input_binary, builder_config)
         builder.build()
         builder.write(str(self.output.path))
 

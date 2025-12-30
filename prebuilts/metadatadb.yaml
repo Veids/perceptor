@@ -1,4 +1,7 @@
 vars:
+  db_path: &db_path !args
+    name: "--database"
+    default: "MetadataDB.db"
   target: &target !args "--steal"
 chain: !Chain
   links:
@@ -40,7 +43,7 @@ chain: !Chain
     - !hiver.MetadataDB
       name: Populate metadata db
       action: store
-      db: "MetadataDB.db"
+      db: *db_path
       icon: *icon
       version: *version
       manifest: *manifest

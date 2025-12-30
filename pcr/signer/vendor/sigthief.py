@@ -103,7 +103,7 @@ def copyCert(exe):
 
     if flItms["CertLOC"] == 0 or flItms["CertSize"] == 0:
         # not signed
-        print("Input file Not signed!")
+        print("Input file is not signed!")
         return None
 
     with open(exe, "rb") as f:

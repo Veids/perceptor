@@ -7,7 +7,7 @@ from enum import Enum
 from pathlib import Path
 from typing import ClassVar, Optional
 from pydantic import FilePath, InstanceOf
-from peewee import SqliteDatabase, Model, CharField, BlobField, TextField, fn
+from peewee import IntegrityError, SqliteDatabase, Model, CharField, BlobField, TextField, fn
 
 from pcr.extractor.PExtractor import AssemblyInfoObj
 from pcr.lib.link import Link
@@ -147,20 +147,23 @@ icon size: {len(icon_blob or [])}
 manifest length: {len(manifest_blob or [])}
 signature length: {len(signature_blob or [])}""")
 
-        Metadata.get_or_create(
-            hash=hash,
-            icon=icon_blob,
-            version=version_blob,
-            version_directory_config=version_directory_config,
-            manifest=manifest_blob,
-            manifest_directory_config=manifest_directory_config,
-            signature=signature_blob,
-            pe_type=pe_type,
-            assemblyInfo=assemblyInfo,
-            assemblyAttributes=assemblyAttributes,
-            originalFilename=originalFilename,
-            exports=exports,
-        )
+        try:
+            Metadata.create(
+                hash=hash,
+                icon=icon_blob,
+                version=version_blob,
+                version_directory_config=version_directory_config,
+                manifest=manifest_blob,
+                manifest_directory_config=manifest_directory_config,
+                signature=signature_blob,
+                pe_type=pe_type,
+                assemblyInfo=assemblyInfo,
+                assemblyAttributes=assemblyAttributes,
+                originalFilename=originalFilename,
+                exports=exports,
+            )
+        except IntegrityError:
+            self.print("Entry already exist, skipping...")
 
     def get(self, pe_type):
         metadata = (

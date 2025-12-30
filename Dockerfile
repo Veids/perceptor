@@ -1,6 +1,8 @@
+# ---------- Common LLVM base ----------
 FROM silkeh/clang:19 AS base
 WORKDIR /app
 
+# ---------- Build SsagePass (LLVM obfuscator) ----------
 FROM base AS ssage
 
 RUN apt-get update && apt-get install -y \
@@ -13,36 +15,7 @@ RUN cd SsagePass/Obfuscation && \
     cmake -S . -B build -DLT_LLVM_INSTALL_DIR=/usr/lib/llvm-19 -DCMAKE_BUILD_TYPE=release && \
     cmake --build build -j $(nproc)
 
-FROM python:3.11-slim-bookworm AS perceptor
-
-ENV PYTHONFAULTHANDLER=1 \
-    PYTHONHASHSEED=random \
-    PYTHONUNBUFFERED=1
-
-WORKDIR /app
-
-ENV PIP_DEFAULT_TIMEOUT=100 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_NO_CACHE_DIR=1 \
-    POETRY_VERSION=2.1.1 \
-    PATH="/root/.local/bin:${PATH}"
-
-RUN apt-get update && apt-get install -y \
-  pipx \
-  git \
-  gcc \
-  g++ \
-  make \
-  cmake \
-  && rm -rf /var/lib/apt/lists/*
-
-RUN pipx install "poetry==$POETRY_VERSION"
-RUN pipx inject poetry poetry-plugin-bundle
-
-COPY . .
-RUN poetry bundle venv --only=main --compile /venv
-
-
+# ---------- Build donut ----------
 FROM debian:bookworm AS donut
 
 RUN apt-get update
@@ -55,6 +28,7 @@ RUN git clone https://github.com/TheWover/donut.git
 WORKDIR /app/donut
 RUN make -f Makefile
 
+# ---------- Grab PowerShell assemblies from mono ----------
 FROM mono:latest AS mono
 
 WORKDIR /app
@@ -62,17 +36,18 @@ RUN nuget install System.Management.Automation -DependencyVersion Ignore
 RUN find . -iname '*.dll' -path '*/runtimes/unix/*' \
   -exec cp {} /app/ \;
 
+# ---------- Final runtime ----------
 FROM base AS final
 
 RUN apt-get update && apt-get install -y \
   imagemagick \
+  python3 \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=ssage /app/SsagePass/Obfuscation/build/libSsageObfuscator.so /opt/libSsageObfuscator.so
 COPY --from=donut /app/donut/donut /opt/donut
-COPY --from=perceptor /venv /venv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 COPY --from=mono /app/System.Management.Automation.dll /opt/System.Management.Automation.dll
-COPY config.docker.yaml config.yaml
 
 RUN ln -s /usr/bin/python3 /usr/local/bin/python3.11
 
@@ -94,8 +69,21 @@ RUN git clone https://github.com/tpoechtrager/wclang && \
     make && make install && \
     cd /app && rm -rf wclang
 
-COPY entrypoint.sh /
-RUN chmod +x /entrypoint.sh && \
-  mkdir tmp
+RUN apt-get update && apt-get install -y \
+  python3 \
+  python3-dev \
+  gcc \
+  g++ \
+  && rm -rf /var/lib/apt/lists/*
 
-ENTRYPOINT ["/entrypoint.sh"]
+COPY README.md pyproject.toml uv.lock* ./
+
+RUN python3 --version
+
+RUN uv sync --no-dev --locked --python 3.11
+
+COPY . .
+
+RUN uv sync --locked --python 3.11
+
+ENTRYPOINT ["uv", "run", "--", "perceptor", "--perceptor-config", "/app/config.docker.yaml"]

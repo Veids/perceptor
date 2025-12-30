@@ -8,6 +8,7 @@ from wand.image import Image
 
 from pcr.lib.artifact import Artifact, ArtifactType, ArtifactOS, ArtifactArch
 from pcr.lib.link import Link
+from pcr.lib.common import log
 
 
 class EntityEnum(str, Enum):
@@ -66,20 +67,30 @@ class PExtractor(Link):
         return True
 
     def get_assembly_info_lief(self, target):
-        ai = target.resources_manager.version.string_file_info.langcode_items[0].items
-        assemblyInfo = AssemblyInfoObj(
-            **{
-                "Title": ai.get("ProductName", b"").decode(),
-                "Description": ai.get("Comments", b"").decode(),
-                "Company": ai.get("CompanyName", b"").decode(),
-                "Product": ai.get("ProductName", b"").decode(),
-                "Copyright": ai.get("LegalCopyright", b"").decode(),
-                "Version": ai.get("ProductVersion", b"").decode(),
-                "FileVersion": ai.get("FileVersion", b"").decode(),
-                "OriginalFilename": ai["OriginalFilename"].decode(),
-            }
-        )
-        return assemblyInfo
+        if len(target.resources_manager.version) > 1:
+            log.warning("There's multiple version instances of the target binary")
+
+        for version in target.resources_manager.version:
+            version_resource = {}
+
+            for block in version.string_file_info.children:
+                for entry in block.entries:
+                    version_resource[entry.key] = entry.value
+
+            assemblyInfo = AssemblyInfoObj(
+                **{
+                    "Title": version_resource.get("ProductName", ""),
+                    "Description": version_resource.get("Comments", ""),
+                    "Company": version_resource.get("CompanyName", ""),
+                    "Product": version_resource.get("ProductName", ""),
+                    "Copyright": version_resource.get("LegalCopyright", b""),
+                    "Version": version_resource.get("ProductVersion", b""),
+                    "FileVersion": version_resource.get("FileVersion", b""),
+                    "OriginalFilename": version_resource["OriginalFilename"],
+                }
+            )
+            return assemblyInfo
+        return None
 
     def get_assembly_info_cecil(self):
         if not self.config["main"].cecil:
@@ -212,7 +223,7 @@ class PExtractor(Link):
 
             pe_type = "net" if self.is_dotnet(target) else "etc"
 
-            if target.header.characteristics & lief.PE.Header.CHARACTERISTICS.DLL:
+            if target.header.has_characteristic(lief.PE.Header.CHARACTERISTICS.DLL):
                 pe_type += "_dll"
 
             assemblyAttributes = None
