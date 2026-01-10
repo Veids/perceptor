@@ -7,10 +7,18 @@ from enum import Enum
 from pathlib import Path
 from typing import ClassVar, Optional
 from pydantic import FilePath, InstanceOf
-from peewee import IntegrityError, SqliteDatabase, Model, CharField, BlobField, TextField, fn
+from peewee import (
+    IntegrityError,
+    SqliteDatabase,
+    Model,
+    CharField,
+    BlobField,
+    TextField,
+    fn,
+)
 
 from pcr.extractor.PExtractor import AssemblyInfoObj
-from pcr.lib.link import Link
+from pcr.lib.link import Link, Obj
 
 database = SqliteDatabase(None)
 
@@ -33,6 +41,7 @@ class Metadata(BaseModel):
     assemblyAttributes = TextField(null=True)
     originalFilename = CharField()
     exports = TextField(null=True)
+    rich_header = BlobField(null=True)
 
 
 class ActionEnum(str, Enum):
@@ -59,6 +68,7 @@ class MetadataObj(pydantic.BaseModel):
     assemblyAttributes: Optional[dict] = None
     originalFilename: str
     exports: Optional[list[str]] = None
+    rich_header: Optional[bytes] = None
 
 
 class MetadataDB(Link):
@@ -70,7 +80,8 @@ class MetadataDB(Link):
     version: Optional[FilePath | InstanceOf[Link]] = None
     manifest: Optional[FilePath | InstanceOf[Link]] = None
     signature: Optional[FilePath | InstanceOf[Link]] = None
-    exports: Optional[FilePath | InstanceOf[Link]] = None
+    exports: Optional[list | Obj] = None
+    rich_header: Optional[bytes | Obj] = None
 
     pe_type: PeTypeEnum = PeTypeEnum.etc
     obj: Optional[MetadataObj] = None
@@ -161,6 +172,7 @@ signature length: {len(signature_blob or [])}""")
                 assemblyAttributes=assemblyAttributes,
                 originalFilename=originalFilename,
                 exports=exports,
+                rich_header=self.rich_header,
             )
         except IntegrityError:
             self.print("Entry already exist, skipping...")
@@ -208,6 +220,7 @@ signature length: {len(signature_blob or [])}""")
                 else None,
                 "originalFilename": metadata.originalFilename,
                 "exports": json.loads(metadata.exports) if metadata.exports else None,
+                "rich_header": metadata.rich_header,
             }
         )
 

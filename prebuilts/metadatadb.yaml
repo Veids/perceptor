@@ -1,6 +1,6 @@
 vars:
   db_path: &db_path !args
-    name: "--database"
+    name: "--metadata"
     default: "MetadataDB.db"
   target: &target !args "--steal"
 chain: !Chain
@@ -34,6 +34,12 @@ chain: !Chain
       entity: exports
       target: *target
 
+    - !extractor.PExtractor
+      &rich_header
+      name: Extract rich header from PE
+      entity: rich_header
+      target: *target
+
     - !signer.SigThief
       &signature
       name: Extract signature from PE
@@ -48,4 +54,5 @@ chain: !Chain
       version: *version
       manifest: *manifest
       signature: *signature
-      exports: *exports
+      exports: !obj [*exports, "exports"]
+      rich_header: !obj [*rich_header, "rich_header"]

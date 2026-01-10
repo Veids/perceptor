@@ -3,8 +3,8 @@ import sys
 from random import Random, randrange
 from enum import Enum
 from typing import ClassVar
-from keystone import Ks, KS_ARCH_X86, KS_MODE_32, KS_MODE_64
 from pydantic import Field
+from iced_x86 import Encoder, Instruction, Code, Register
 
 from pcr.lib.artifact import Artifact, ArtifactType, ArtifactOS, ArtifactArch
 from pcr.lib.link import EncoderLink
@@ -38,29 +38,18 @@ class RNDOpcodes(EncoderLink):
             path=str(self.config["main"].tmp / f"stage.{self.id}.bin"),
         )
 
-    def generate_opcodes(self):
-        x86_instructions = [
-            "inc eax",
-            "dec ebx",
-            "dec eax",
-            "nop",
-            "xchg ax,ax",
-            "mov eax, {}",
-            "mov ebx, {}",
-            "mov ecx, {}",
-            "mov edx, {}",
-        ]
+    @staticmethod
+    def _encode_many(bitness: int, instrs: list[Instruction]) -> bytes:
+        enc = Encoder(bitness)
+        enc.ip = 0
 
-        x64_instructions = [
-            "inc rax",
-            "dec rbx",
-            "dec rdx",
-            "mov rax, {}",
-            "mov rbx, {}",
-            "mov rcx, {}",
-            "mov rdx, {}",
-        ]
+        out = bytearray()
+        for ins in instrs:
+            enc.encode(ins)
+            out += enc.take_buffer()
+        return bytes(out)
 
+    def generate_opcodes(self) -> bytes:
         if "-" in self.n:
             start, end = self.n.split("-")
             n = rng.randint(int(start), int(end))
@@ -69,23 +58,55 @@ class RNDOpcodes(EncoderLink):
 
         self.print(f"Inserting: {n} opcodes")
 
-        opcodes = b""
-        if self.input.output.arch in [ArtifactArch.X86, ArtifactArch.X86_AMD64]:
-            instructions = x86_instructions
-            ks = Ks(KS_ARCH_X86, KS_MODE_32)
+        arch = self.input.output.arch
+
+        if arch == ArtifactArch.X86:
+            bitness = 32
+            pool = [
+                lambda: Instruction.create_reg(Code.INC_R32, Register.EAX),  # inc eax
+                lambda: Instruction.create_reg(Code.DEC_R32, Register.EBX),  # dec ebx
+                lambda: Instruction.create_reg(Code.DEC_R32, Register.EAX),  # dec eax
+                lambda: Instruction.create(Code.NOPD),  # nop
+                lambda: Instruction.create_reg(
+                    Code.XCHG_R16_AX, Register.AX
+                ),  # xchg ax, ax
+                lambda: Instruction.create_reg_i32(
+                    Code.MOV_R32_IMM32, Register.EAX, rng.getrandbits(32)
+                ),
+                lambda: Instruction.create_reg_i32(
+                    Code.MOV_R32_IMM32, Register.EBX, rng.getrandbits(32)
+                ),
+                lambda: Instruction.create_reg_i32(
+                    Code.MOV_R32_IMM32, Register.ECX, rng.getrandbits(32)
+                ),
+                lambda: Instruction.create_reg_i32(
+                    Code.MOV_R32_IMM32, Register.EDX, rng.getrandbits(32)
+                ),
+            ]
         else:
-            instructions = x86_instructions + x64_instructions
-            ks = Ks(KS_ARCH_X86, KS_MODE_64)
+            bitness = 64
+            pool = [
+                lambda: Instruction.create_reg(Code.INC_R64, Register.RAX),  # inc rax
+                lambda: Instruction.create_reg(Code.DEC_R64, Register.RBX),  # dec rbx
+                lambda: Instruction.create_reg(Code.DEC_R64, Register.RDX),  # dec rdx
+                lambda: Instruction.create_reg_i64(
+                    Code.MOV_R64_IMM64, Register.RAX, rng.getrandbits(32)
+                ),
+                lambda: Instruction.create_reg_i64(
+                    Code.MOV_R64_IMM64, Register.RBX, rng.getrandbits(32)
+                ),
+                lambda: Instruction.create_reg_i64(
+                    Code.MOV_R64_IMM64, Register.RCX, rng.getrandbits(32)
+                ),
+                lambda: Instruction.create_reg_i64(
+                    Code.MOV_R64_IMM64, Register.RDX, rng.getrandbits(32)
+                ),
+                lambda: Instruction.create(Code.NOPD),
+                lambda: Instruction.create_reg(Code.XCHG_R16_AX, Register.AX),
+            ]
 
-        scope = rng.choices(instructions, k=n)
-        for inst in scope:
-            if "{" in inst:
-                bytecode, _ = ks.asm(inst.format(rng.randint(0, 0xFFFFFFFF)))
-            else:
-                bytecode, _ = ks.asm(inst)
-            opcodes += bytes(bytecode)
-
-        return opcodes
+        instrs = [rng.choice(pool)() for _ in range(n)]
+        return self._encode_many(bitness, instrs)
 
     def process(self):
         self.verify_args()

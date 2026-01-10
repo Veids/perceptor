@@ -1,0 +1,38 @@
+vars:
+  target: &metadata_path !args "--metadata"
+chain: !Chain
+  links:
+    - !stdin
+      &stdin
+      name: Stdin
+
+    - !hiver.MetadataDB
+      &metadata
+      name: Obtain metadata from db
+      db: *metadata_path
+      action: get
+
+    - !modifier.Manifestor
+      &manifest
+      manifest: !obj [*metadata, "manifest"]
+      name: Keep only assemblyIdentity/description with amd64 arch
+      keep:
+        - description
+        - assemblyIdentity
+      assemblyIdentity:
+        processorArchitecture: amd64
+
+    - !modifier.ResourceCarver
+      input: *stdin
+      name: Embed resources into executable
+      icon: !obj [*metadata, "icon"]
+      version: !obj [*metadata, "version"]
+      version_directory_config: !obj [*metadata, "version_directory_config"]
+      manifest: !obj [*manifest, "raw_manifest"]
+      manifest_directory_config: !obj [*metadata, "manifest_directory_config"]
+      rich_header: !obj [*metadata, "rich_header"]
+
+    - !signer.SigThief
+      name: Write signature from DB
+      action: write
+      target: !obj [*metadata, "signature"]

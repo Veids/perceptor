@@ -1,9 +1,10 @@
 import lief
+import pydantic
 import xmltodict
 
 from enum import Enum
 from typing import ClassVar, Optional
-from pydantic import FilePath, BaseModel
+from pydantic import Field, FilePath, BaseModel
 from wand.image import Image
 
 from pcr.lib.artifact import Artifact, ArtifactType, ArtifactOS, ArtifactArch
@@ -16,6 +17,7 @@ class EntityEnum(str, Enum):
     manifest = "manifest"
     version = "version"
     exports = "exports"
+    rich_header = "rich_header"
 
 
 class AssemblyInfoObj(BaseModel):
@@ -29,19 +31,24 @@ class AssemblyInfoObj(BaseModel):
     OriginalFilename: str
 
 
+class PExtractorObj(pydantic.BaseModel):
+    rich_header: Optional[bytes] = None
+    exports: Optional[list] = None
+
+
 class PExtractor(Link):
     yaml_tag: ClassVar[str] = "!extractor.PExtractor"
     target: FilePath
     entity: EntityEnum
 
-    obj: Optional[dict] = None
+    obj: PExtractorObj = Field(default_factory=PExtractorObj)
 
     def deduce_artifact(self) -> Artifact:
         if self.entity == EntityEnum.icon:
             extension = "ico"
         elif self.entity == EntityEnum.manifest:
             extension = "xml"
-        elif self.entity == EntityEnum.version:
+        elif self.entity in [EntityEnum.version, EntityEnum.rich_header]:
             extension = "bin"
         elif self.entity == EntityEnum.exports:
             extension = "txt"
@@ -128,10 +135,20 @@ class PExtractor(Link):
         return assemblyAttributes
 
     def extract_exports(self, target):
-        if target.has_exports:
-            names = [x.name for x in target.exported_functions]
-            self.obj = {"exports": names}
-            self.output.path.write_text("\n".join(names))
+        if not target.has_exports:
+            return
+
+        names = [x.name for x in target.exported_functions]
+        self.obj.exports = names
+        self.output.path.write_text("\n".join(names))
+
+    def extract_rich_header(self, target):
+        if not target.has_rich_header:
+            return
+
+        rich_header = bytes(target.rich_header.raw())
+        self.obj.rich_header = rich_header
+        self.output.path.write_bytes(rich_header)
 
     def process(self):
         self.output = self.deduce_artifact()
@@ -254,6 +271,8 @@ class PExtractor(Link):
             self.output.write(lang_node.content.tobytes())
         elif self.entity == EntityEnum.exports:
             self.extract_exports(target)
+        elif self.entity == EntityEnum.rich_header:
+            self.extract_rich_header(target)
 
     def info(self) -> str:
         return "Extract resources from PE file"

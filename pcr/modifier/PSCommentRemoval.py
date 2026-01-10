@@ -65,13 +65,13 @@ class PSCommentRemoval(Link):
                 # Handle the line numbering for multi-line strings
                 if token.Type == PSTokenType.String and token.EndLine > token.StartLine:
                     stringLines = scriptBlock[
-                        token.Start: currentTokenEnd
+                        token.Start : currentTokenEnd
                     ].splitlines()
 
                     for stringLine in stringLines:
                         result += stringLine
                 else:
-                    result += scriptBlock[token.Start: currentTokenEnd]
+                    result += scriptBlock[token.Start : currentTokenEnd]
 
                 currentColumn = token.EndColumn
 

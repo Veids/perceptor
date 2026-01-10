@@ -78,12 +78,12 @@ RUN apt-get update && apt-get install -y \
 
 COPY README.md pyproject.toml uv.lock* ./
 
-RUN python3 --version
-
-RUN uv sync --no-dev --locked --python 3.11
+RUN uv sync --locked --python 3.11 --no-dev
 
 COPY . .
 
-RUN uv sync --locked --python 3.11
+RUN uv sync --locked --python 3.11 --no-dev
 
-ENTRYPOINT ["uv", "run", "--", "perceptor", "--perceptor-config", "/app/config.docker.yaml"]
+RUN uv tool install . --python 3.11
+
+ENV PATH="/root/.local/bin/:$PATH"

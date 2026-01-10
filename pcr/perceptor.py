@@ -67,7 +67,7 @@ def parse_args():
         type=Path,
         action="store",
         default="config.yaml",
-        help="Perceptor config path"
+        help="Perceptor config path",
     )
     parser.add_argument(
         "-c",
@@ -222,7 +222,7 @@ def load_input(args):
         lb = lief.parse(f.read())
 
     if isinstance(lb, lief.PE.Binary):
-        if lb.header.characteristics & lief.PE.Header.CHARACTERISTICS.DLL:
+        if lb.header.has_characteristic(lief.PE.Header.CHARACTERISTICS.DLL):
             atype = ArtifactType.LIBRARY
         else:
             atype = ArtifactType.PE

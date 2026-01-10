@@ -1,3 +1,5 @@
+import pydantic
+
 from xml.dom.minidom import parse, parseString
 from typing import ClassVar, Optional
 from typing_extensions import TypedDict, NotRequired
@@ -13,13 +15,19 @@ class AssemblyIdentityDict(TypedDict):
     type: NotRequired[str | Obj]
 
 
+class ManifestorObj(pydantic.BaseModel):
+    assemblyIdentity: dict = {}
+    description: str = ""
+    raw_manifest: str = ""
+
+
 class Manifestor(Link):
     yaml_tag: ClassVar[str] = "!modifier.Manifestor"
     keep: Optional[list[str]] = None
     assemblyIdentity: Optional[AssemblyIdentityDict] = None
     description: Optional[str] = None
     manifest: Optional[bytes | Obj] = None
-    obj: dict = {}
+    obj: Optional[ManifestorObj] = None
 
     def deduce_artifact(self) -> Artifact:
         return Artifact(
@@ -35,16 +43,20 @@ class Manifestor(Link):
                 node.attributes[k] = v
 
         for k, v in node.attributes.items():
-            self.obj[k] = v
+            self.obj.assemblyIdentity[k] = v
 
     def handle_description(self, node):
         if self.description is not None:
             node.firstChild.nodeValue = self.description
 
-        self.obj["description"] = node.firstChild.nodeValue
+        self.obj.description = node.firstChild.nodeValue
+
+    def handle_default(self, node):
+        self.print(f"Node {node.nodeName} is not handled")
 
     def process(self):
         self.output = self.deduce_artifact()
+        self.obj = ManifestorObj()
         if self.manifest is None:
             document = parse(str(self.input.output.path))
         else:
@@ -62,13 +74,19 @@ class Manifestor(Link):
             for node in to_delete:
                 document.removeChild(node)
 
-        for node in document.childNodes:
-            if node.nodeName == "assemblyIdentity":
-                self.handle_assemblyIdentity(node)
-            elif node.nodeName == "description":
-                self.handle_description(node)
+        handlers = {
+            "assemblyIdentity": self.handle_assemblyIdentity,
+            "description": self.handle_description,
+        }
 
-        self.output.write(document.toxml().encode())
+        for node in document.childNodes:
+            node_handler = handlers.get(node.nodeName, self.handle_default)
+            node_handler(node)
+
+        output_manifest = document.toxml().encode()
+
+        self.obj.raw_manifest = output_manifest
+        self.output.write(output_manifest)
 
     def info(self) -> str:
         return "Mutate manifest file"
