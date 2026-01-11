@@ -31,6 +31,8 @@ chain: !Chain
       manifest: !obj [*manifest, "raw_manifest"]
       manifest_directory_config: !obj [*metadata, "manifest_directory_config"]
       rich_header: !obj [*metadata, "rich_header"]
+      major_linker_version: !obj [*metadata, "major_linker_version"]
+      minor_linker_version: !obj [*metadata, "minor_linker_version"]
 
     - !signer.SigThief
       name: Write signature from DB

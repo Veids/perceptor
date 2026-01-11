@@ -1,3 +1,4 @@
+from os import major
 import lief
 import pydantic
 import xmltodict
@@ -18,6 +19,7 @@ class EntityEnum(str, Enum):
     version = "version"
     exports = "exports"
     rich_header = "rich_header"
+    optional_header = "optional_header"
 
 
 class AssemblyInfoObj(BaseModel):
@@ -34,6 +36,8 @@ class AssemblyInfoObj(BaseModel):
 class PExtractorObj(pydantic.BaseModel):
     rich_header: Optional[bytes] = None
     exports: Optional[list] = None
+    major_linker_version: Optional[int] = None
+    minor_linker_version: Optional[int] = None
 
 
 class PExtractor(Link):
@@ -48,7 +52,11 @@ class PExtractor(Link):
             extension = "ico"
         elif self.entity == EntityEnum.manifest:
             extension = "xml"
-        elif self.entity in [EntityEnum.version, EntityEnum.rich_header]:
+        elif self.entity in [
+            EntityEnum.version,
+            EntityEnum.rich_header,
+            EntityEnum.optional_header,
+        ]:
             extension = "bin"
         elif self.entity == EntityEnum.exports:
             extension = "txt"
@@ -149,6 +157,10 @@ class PExtractor(Link):
         rich_header = bytes(target.rich_header.raw())
         self.obj.rich_header = rich_header
         self.output.path.write_bytes(rich_header)
+
+    def extract_optional_header(self, target):
+        self.obj.major_linker_version = target.optional_header.major_linker_version
+        self.obj.minor_linker_version = target.optional_header.minor_linker_version
 
     def process(self):
         self.output = self.deduce_artifact()
@@ -273,6 +285,8 @@ class PExtractor(Link):
             self.extract_exports(target)
         elif self.entity == EntityEnum.rich_header:
             self.extract_rich_header(target)
+        elif self.entity == EntityEnum.optional_header:
+            self.extract_optional_header(target)
 
     def info(self) -> str:
         return "Extract resources from PE file"

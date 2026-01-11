@@ -12,12 +12,14 @@ def _rol(val, num):
     """Rotates val to the left by num bits."""
     return ((val << (num % 32)) & 0xFFFFFFFF) | (val >> (32 - (num % 32)))
 
+
 def _get_rich_fields(rich_raw) -> list:
     rich_fields = list(
         struct.unpack("<{}I".format(len(rich_raw) // 4), bytes(rich_raw))
     )[4:-2]
 
     return list(zip(rich_fields[::2], rich_fields[1::2]))
+
 
 class ResourceCarver(Link):
     yaml_tag: ClassVar[str] = "!modifier.ResourceCarver"
@@ -27,6 +29,8 @@ class ResourceCarver(Link):
     manifest: Optional[bytes | Obj] = None
     manifest_directory_config: Optional[dict | Obj] = None
     rich_header: Optional[bytes | Obj] = None
+    major_linker_version: Optional[int | Obj] = None
+    minor_linker_version: Optional[int | Obj] = None
 
     def verify_args(self):
         if self.input.output.type != ArtifactType.PE:
@@ -182,7 +186,7 @@ class ResourceCarver(Link):
         return checksum
 
     def _build_new_rich_header(self) -> lief.PE.RichHeader:
-        rich_header_new = lief.PE.RichHeader() 
+        rich_header_new = lief.PE.RichHeader()
         rich_fields_new = _get_rich_fields(self.rich_header)
         for value, count in rich_fields_new[::-1]:
             build_id = value & 0xFFFF
@@ -198,16 +202,17 @@ class ResourceCarver(Link):
 
         key = input_binary.rich_header.key
         rich_raw_old = bytes(input_binary.rich_header.raw())
-        old_checksum = self._compute_rich_checksum(
-            rich_raw_old, key
-        )
+        old_checksum = self._compute_rich_checksum(rich_raw_old, key)
         new_checksum = self._compute_rich_checksum(self.rich_header, key)
         self.print(f"Rich checksum (old -> new): {old_checksum} -> {new_checksum}")
 
         rich_header_new = self._build_new_rich_header()
         rich_new_raw = bytes(rich_header_new.raw(new_checksum))
         old_dos_stub = input_binary.dos_stub.tobytes()
-        new_dos_stub = old_dos_stub.replace(bytes(input_binary.rich_header.raw(input_binary.rich_header.key)), rich_new_raw)
+        new_dos_stub = old_dos_stub.replace(
+            bytes(input_binary.rich_header.raw(input_binary.rich_header.key)),
+            rich_new_raw,
+        )
         input_binary.dos_stub = list(new_dos_stub)
 
         rich_diff = len(rich_new_raw) - len(rich_raw_old)
@@ -215,8 +220,21 @@ class ResourceCarver(Link):
         self.print(f"Carved rich header entries:")
         messages = ["\tid:\tbuild_id\tcount"]
         for rich_entry in rich_header_new.entries:
-            messages.append(f"\t{rich_entry.id}:\t{rich_entry.build_id}\t{rich_entry.count}")
+            messages.append(
+                f"\t{rich_entry.id}:\t{rich_entry.build_id}\t{rich_entry.count}"
+            )
         self.print("\n".join(messages))
+
+    def carve_optional_header(self, input_binary):
+        if self.major_linker_version is None or self.minor_linker_version is None:
+            return
+
+        input_binary.optional_header.major_linker_version = self.major_linker_version
+        input_binary.optional_header.minor_linker_version = self.minor_linker_version
+
+        self.print(
+            f"Carved linker version (major/minor): {self.major_linker_version}/{self.minor_linker_version}"
+        )
 
     def process(self):
         self.verify_args()
@@ -230,6 +248,7 @@ class ResourceCarver(Link):
         self.carve_icon(input_binary)
         self.carve_manifest(input_binary)
         self.carve_rich_header(input_binary)
+        self.carve_optional_header(input_binary)
 
         builder_config = lief.PE.Builder.config_t()
         builder_config.resources = True

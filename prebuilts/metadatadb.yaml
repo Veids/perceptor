@@ -40,6 +40,12 @@ chain: !Chain
       entity: rich_header
       target: *target
 
+    - !extractor.PExtractor
+      &optional_header
+      name: Extract optional header from PE
+      entity: optional_header
+      target: *target
+
     - !signer.SigThief
       &signature
       name: Extract signature from PE
@@ -56,3 +62,5 @@ chain: !Chain
       signature: *signature
       exports: !obj [*exports, "exports"]
       rich_header: !obj [*rich_header, "rich_header"]
+      major_linker_version: !obj [*optional_header, "major_linker_version"]
+      minor_linker_version: !obj [*optional_header, "minor_linker_version"]

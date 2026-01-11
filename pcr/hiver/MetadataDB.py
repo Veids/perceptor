@@ -14,6 +14,7 @@ from peewee import (
     CharField,
     BlobField,
     TextField,
+    IntegerField,
     fn,
 )
 
@@ -42,6 +43,8 @@ class Metadata(BaseModel):
     originalFilename = CharField()
     exports = TextField(null=True)
     rich_header = BlobField(null=True)
+    major_linker_version = IntegerField(null=True)
+    minor_linker_version = IntegerField(null=True)
 
 
 class ActionEnum(str, Enum):
@@ -69,6 +72,8 @@ class MetadataObj(pydantic.BaseModel):
     originalFilename: str
     exports: Optional[list[str]] = None
     rich_header: Optional[bytes] = None
+    major_linker_version: int
+    minor_linker_version: int
 
 
 class MetadataDB(Link):
@@ -82,6 +87,8 @@ class MetadataDB(Link):
     signature: Optional[FilePath | InstanceOf[Link]] = None
     exports: Optional[list | Obj] = None
     rich_header: Optional[bytes | Obj] = None
+    major_linker_version: Optional[int | Obj] = None
+    minor_linker_version: Optional[int | Obj] = None
 
     pe_type: PeTypeEnum = PeTypeEnum.etc
     obj: Optional[MetadataObj] = None
@@ -173,6 +180,8 @@ signature length: {len(signature_blob or [])}""")
                 originalFilename=originalFilename,
                 exports=exports,
                 rich_header=self.rich_header,
+                major_linker_version=self.major_linker_version,
+                minor_linker_version=self.minor_linker_version,
             )
         except IntegrityError:
             self.print("Entry already exist, skipping...")
@@ -221,6 +230,8 @@ signature length: {len(signature_blob or [])}""")
                 "originalFilename": metadata.originalFilename,
                 "exports": json.loads(metadata.exports) if metadata.exports else None,
                 "rich_header": metadata.rich_header,
+                "major_linker_version": metadata.major_linker_version,
+                "minor_linker_version": metadata.minor_linker_version,
             }
         )
 
