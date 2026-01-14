@@ -51,7 +51,9 @@ class SigThief(Link):
             writeCert(cert, self.input.output.path, self.output.path)
         elif self.action == ActionEnum.store:
             outputCert(str(self.target), str(self.output.path))
-            self.obj.signature = self.output.path.read_bytes()
+
+            if self.output.path.exists():
+                self.obj.signature = self.output.path.read_bytes()
 
     def info(self):
         return "Steal binary signature"
