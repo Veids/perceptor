@@ -1,12 +1,16 @@
 import shutil
 
 from typing import ClassVar, Optional
-from pydantic import FilePath
+from pydantic import BaseModel, Field, FilePath
 from enum import Enum
 
 from pcr.lib.link import Link, Obj
 from pcr.lib.artifact import Artifact
 from pcr.signer.vendor.sigthief import copyCert, writeCert, outputCert
+
+
+class SigThiefObj(BaseModel):
+    signature: Optional[bytes] = None
 
 
 class ActionEnum(str, Enum):
@@ -18,6 +22,7 @@ class SigThief(Link):
     yaml_tag: ClassVar[str] = "!signer.SigThief"
     target: Optional[FilePath | bytes | Obj]
     action: ActionEnum
+    obj: SigThiefObj = Field(default_factory=SigThiefObj)
 
     def deduce_artifact(self) -> Artifact:
         extension = "exe" if self.action == ActionEnum.write else "sig"
@@ -46,6 +51,7 @@ class SigThief(Link):
             writeCert(cert, self.input.output.path, self.output.path)
         elif self.action == ActionEnum.store:
             outputCert(str(self.target), str(self.output.path))
+            self.obj.signature = self.output.path.read_bytes()
 
     def info(self):
         return "Steal binary signature"

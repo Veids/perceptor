@@ -84,7 +84,7 @@ class MetadataDB(Link):
     icon: Optional[FilePath | InstanceOf[Link]] = None
     version: Optional[FilePath | InstanceOf[Link]] = None
     manifest: Optional[FilePath | InstanceOf[Link]] = None
-    signature: Optional[FilePath | InstanceOf[Link]] = None
+    signature: Optional[bytes | Obj] = None
     exports: Optional[list | Obj] = None
     rich_header: Optional[bytes | Obj] = None
     major_linker_version: Optional[int | Obj] = None
@@ -133,21 +133,10 @@ class MetadataDB(Link):
             elif self.manifest.exists():
                 manifest_blob = self.manifest.read_bytes()
 
-        if self.signature:
-            if isinstance(self.signature, Link):
-                if self.signature.output.path.exists():
-                    signature_blob = self.signature.output.path.read_bytes()
-            elif self.signature.exists():
-                signature_blob = self.signature.read_bytes()
-
         if self.exports:
-            if isinstance(self.exports, Link):
-                if self.exports.obj:
-                    exports = json.dumps(self.exports.obj.get("exports"))
-            elif self.exports.exists():
-                exports = json.dumps(self.exports.read_text().split("\n"))
+            exports = json.dumps(self.exports)
 
-        hash_parts = [icon_blob, version_blob, manifest_blob, signature_blob]
+        hash_parts = [icon_blob, version_blob, manifest_blob, self.signature]
         for x in hash_parts:
             if x:
                 hash.update(x)
@@ -156,8 +145,9 @@ class MetadataDB(Link):
 
         if icon_blob:
             icon_blob = zlib.compress(icon_blob)
-        if signature_blob:
-            signature_blob = zlib.compress(signature_blob)
+
+        if self.signature:
+            signature_blob = zlib.compress(self.signature)
 
         self.print(f"""Storing metadata:
 hash: {hash}
