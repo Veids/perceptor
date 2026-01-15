@@ -197,8 +197,12 @@ class ResourceCarver(Link):
         return rich_header_new
 
     def carve_rich_header(self, input_binary):
+        if not self.rich_header:
+            return
+
         if not input_binary.has_rich_header:
-            raise Exception("Input binary doesn't have rich header")
+            self.print("Input binary doesn't have rich header, skipping...")
+            return
 
         key = input_binary.rich_header.key
         rich_raw_old = bytes(input_binary.rich_header.raw())
