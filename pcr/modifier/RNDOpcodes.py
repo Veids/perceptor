@@ -4,7 +4,7 @@ from random import Random, randrange
 from enum import Enum
 from typing import ClassVar
 from pydantic import Field
-from iced_x86 import Encoder, Instruction, Code, Register
+from iced_x86 import BlockEncoder, Instruction, Code, Register
 
 from pcr.lib.artifact import Artifact, ArtifactType, ArtifactOS, ArtifactArch
 from pcr.lib.link import EncoderLink
@@ -40,13 +40,9 @@ class RNDOpcodes(EncoderLink):
 
     @staticmethod
     def _encode_many(bitness: int, instrs: list[Instruction]) -> bytes:
-        enc = Encoder(bitness)
-
-        out = bytearray()
-        for ins in instrs:
-            enc.encode(ins, rip=0)
-            out += enc.take_buffer()
-        return bytes(out)
+        enc = BlockEncoder(bitness)
+        enc.add_many(instrs)
+        return enc.encode(0)
 
     def generate_opcodes(self) -> bytes:
         if "-" in self.n:
@@ -66,8 +62,8 @@ class RNDOpcodes(EncoderLink):
                 lambda: Instruction.create_reg(Code.DEC_R32, Register.EBX),  # dec ebx
                 lambda: Instruction.create_reg(Code.DEC_R32, Register.EAX),  # dec eax
                 lambda: Instruction.create(Code.NOPD),  # nop
-                lambda: Instruction.create_reg(
-                    Code.XCHG_R16_AX, Register.AX
+                lambda: Instruction.create_reg_reg(
+                    Code.XCHG_R16_AX, Register.AX, Register.AX
                 ),  # xchg ax, ax
                 lambda: Instruction.create_reg_i32(
                     Code.MOV_R32_IMM32, Register.EAX, rng.getrandbits(32)
@@ -101,7 +97,7 @@ class RNDOpcodes(EncoderLink):
                     Code.MOV_R64_IMM64, Register.RDX, rng.getrandbits(32)
                 ),
                 lambda: Instruction.create(Code.NOPD),
-                lambda: Instruction.create_reg(Code.XCHG_R16_AX, Register.AX),
+                lambda: Instruction.create_reg_reg(Code.XCHG_R16_AX, Register.AX, Register.AX),
             ]
 
         instrs = [rng.choice(pool)() for _ in range(n)]
