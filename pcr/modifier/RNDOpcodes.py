@@ -41,11 +41,10 @@ class RNDOpcodes(EncoderLink):
     @staticmethod
     def _encode_many(bitness: int, instrs: list[Instruction]) -> bytes:
         enc = Encoder(bitness)
-        enc.ip = 0
 
         out = bytearray()
         for ins in instrs:
-            enc.encode(ins)
+            enc.encode(ins, rip=0)
             out += enc.take_buffer()
         return bytes(out)
 
@@ -86,9 +85,9 @@ class RNDOpcodes(EncoderLink):
         else:
             bitness = 64
             pool = [
-                lambda: Instruction.create_reg(Code.INC_R64, Register.RAX),  # inc rax
-                lambda: Instruction.create_reg(Code.DEC_R64, Register.RBX),  # dec rbx
-                lambda: Instruction.create_reg(Code.DEC_R64, Register.RDX),  # dec rdx
+                lambda: Instruction.create_reg(Code.INC_RM64, Register.RAX),  # inc rax
+                lambda: Instruction.create_reg(Code.DEC_RM64, Register.RBX),  # dec rbx
+                lambda: Instruction.create_reg(Code.DEC_RM64, Register.RDX),  # dec rdx
                 lambda: Instruction.create_reg_i64(
                     Code.MOV_R64_IMM64, Register.RAX, rng.getrandbits(32)
                 ),
