@@ -78,6 +78,9 @@ RUN apt-get update && apt-get install -y \
 
 COPY README.md pyproject.toml uv.lock* ./
 
+ENV UV_TOOL_DIR=/opt/uv/tools
+ENV UV_TOOL_BIN_DIR=/usr/local/bin
+
 RUN uv sync --locked --python 3.11 --no-dev
 
 COPY . .
@@ -85,5 +88,3 @@ COPY . .
 RUN uv sync --locked --python 3.11 --no-dev
 
 RUN uv tool install . --python 3.11
-
-ENV PATH="/root/.local/bin/:$PATH"
