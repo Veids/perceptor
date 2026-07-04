@@ -248,6 +248,20 @@ def load_config(args):
         return yaml.load(f.read())
 
 
+def copy_dir_contents(src: str | Path, dst: str | Path) -> None:
+    src = Path(src)
+    dst = Path(dst)
+
+    dst.mkdir(parents=True, exist_ok=True)
+
+    for item in src.iterdir():
+        target = dst / item.name
+
+        if item.is_dir():
+            shutil.copytree(item, target, dirs_exist_ok=True)
+        else:
+            shutil.copy2(item, target)
+
 def main():
     args, unknown = parse_args()
 
@@ -261,9 +275,7 @@ def main():
 
     if args.output:
         if chain.links[-1].output.type == ArtifactType.DIRECTORY:
-            shutil.copytree(
-                chain.links[-1].output.path, args.output, dirs_exist_ok=True
-            )
+            copy_dir_contents(chain.links[-1].output.path, args.output)
         else:
             shutil.copyfile(chain.links[-1].output.path, args.output)
 
